@@ -667,7 +667,8 @@ MonoBehaviour:
   playerHandArea: {fileID: 982393383}
   enemyHandArea: {fileID: 368411635}
   publicCardArea: {fileID: 1597840472}
-  cardSpacing: 3
+  cardSpacing: 0
+  cardWidth: 80
 --- !u!4 &752966011
 Transform:
   m_ObjectHideFlags: 0

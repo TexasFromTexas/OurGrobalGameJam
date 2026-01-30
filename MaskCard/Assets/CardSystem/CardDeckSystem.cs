@@ -272,7 +272,7 @@ public class CardDeckSystem : MonoBehaviour
         return drawnCard;
     }
 
-    // ========== 生成单张卡牌（替代原有批量生成逻辑） ==========
+    // ========== 生成单张卡牌（删除了高亮组件相关代码） ==========
     private void SpawnSingleCard(PlayingCard cardData, Transform parentArea, ref List<GameObject> cardList)
     {
         if (parentArea == null || cardPrefab == null) return;
@@ -281,12 +281,6 @@ public class CardDeckSystem : MonoBehaviour
         GameObject cardObj = Instantiate(cardPrefab, parentArea);
         RectTransform cardRect = cardObj.GetComponent<RectTransform>();
         CardDisplay cardDisplay = cardObj.GetComponent<CardDisplay>();
-
-        // 保留：自动添加悬停高亮组件
-        if (cardObj.GetComponent<CardHoverEffect>() == null)
-        {
-            cardObj.AddComponent<CardHoverEffect>();
-        }
 
         // 绑定卡牌数据
         if (cardDisplay == null)
