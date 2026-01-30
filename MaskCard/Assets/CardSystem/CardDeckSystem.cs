@@ -58,7 +58,7 @@ public class PlayingCard
             CardRank.Jack => "J",
             CardRank.Queen => "Q",
             CardRank.King => "K",
-            CardRank.Joker => "鬼牌",
+            CardRank.Joker => "Joker",
             _ => ""
         };
 
@@ -80,28 +80,30 @@ public class CardDeckSystem : MonoBehaviour
     private bool isInRound = false;
     public bool IsInRound => isInRound;
 
-    // 新增：选牌删除模式标记
-    private bool isSelectingCardToDelete = false;
-    public bool IsSelectingCardToDelete => isSelectingCardToDelete;
+    // 供外部获取玩家手牌数量
+    public int PlayerCardCount => playerCardObjects.Count;
+
+    // 事件：回合状态变化时触发
+    public Action<bool> OnRoundStateChanged;
 
     private List<GameObject> playerCardObjects = new List<GameObject>();
     private List<GameObject> enemyCardObjects = new List<GameObject>();
     private List<GameObject> publicCardObjects = new List<GameObject>();
+    public List<GameObject> PublicCardObjects => publicCardObjects;
 
-    // UI引用
+    // UI引用（已删除deleteCardButton）
     [Header("UI组件")]
     public Button startRoundButton;
     public Button endRoundButton;
-    // 新增：删除卡牌按钮
-    public Button deleteCardButton;
     public GameObject cardPrefab;
     public Transform playerHandArea;
     public Transform enemyHandArea;
     public Transform publicCardArea;
 
     [Header("卡牌布局")]
-    public float cardSpacing = 10f;
+    public float cardSpacing = 10f; // 玩家/敌人手牌间距
     public float cardWidth = 80f;
+    public float publicCardSpacing = 15f; // 公共牌专属间距
 
     private void Start()
     {
@@ -110,11 +112,7 @@ public class CardDeckSystem : MonoBehaviour
 
         startRoundButton.onClick.AddListener(StartNewRound);
         endRoundButton.onClick.AddListener(EndCurrentRound);
-        // 新增：绑定删除按钮事件
-        deleteCardButton.onClick.AddListener(ToggleDeleteCardMode);
         endRoundButton.interactable = false;
-        // 初始禁用删除按钮
-        deleteCardButton.interactable = false;
 
         CheckReferences();
 
@@ -154,8 +152,6 @@ public class CardDeckSystem : MonoBehaviour
         if (playerHandArea == null) Debug.LogError("请给PlayerHandArea字段拖入玩家手牌区域！");
         if (enemyHandArea == null) Debug.LogError("请给EnemyHandArea字段拖入敌人手牌区域！");
         if (publicCardArea == null) Debug.LogError("请给PublicCardArea字段拖入公共牌区域！");
-        // 新增：检查删除按钮引用
-        if (deleteCardButton == null) Debug.LogError("请给DeleteCardButton字段拖入删除卡牌按钮！");
     }
 
     private void StartNewRound()
@@ -169,6 +165,7 @@ public class CardDeckSystem : MonoBehaviour
         }
 
         isInRound = true;
+        OnRoundStateChanged?.Invoke(true); // 触发回合开始事件
 
         List<PlayingCard> playerHand = new List<PlayingCard>();
         DrawCardsFromDeck(ref playerHand, 2);
@@ -196,20 +193,12 @@ public class CardDeckSystem : MonoBehaviour
 
         endRoundButton.interactable = true;
         startRoundButton.interactable = false;
-        // 新增：回合开始时启用删除按钮
-        deleteCardButton.interactable = true;
 
         Debug.Log($"新回合开始：牌库剩余{cardDeck.Count}张，当前状态：回合中");
     }
 
     private void EndCurrentRound()
     {
-        // 新增：结束回合时退出选牌删除模式
-        if (isSelectingCardToDelete)
-        {
-            ToggleDeleteCardMode();
-        }
-
         List<PlayingCard> drawnCards = new List<PlayingCard>();
         drawnCards.AddRange(GetCardDataFromObjects(playerCardObjects));
         drawnCards.AddRange(GetCardDataFromObjects(enemyCardObjects));
@@ -222,11 +211,10 @@ public class CardDeckSystem : MonoBehaviour
         ClearAllCardObjects();
 
         isInRound = false;
+        OnRoundStateChanged?.Invoke(false); // 触发回合结束事件
 
         endRoundButton.interactable = false;
         startRoundButton.interactable = true;
-        // 新增：回合结束时禁用删除按钮
-        deleteCardButton.interactable = false;
 
         Debug.Log($"回合已结束，当前状态：回合外");
     }
@@ -279,54 +267,50 @@ public class CardDeckSystem : MonoBehaviour
             Debug.LogError($"卡牌预制体中找不到Text组件！");
         }
 
-        // 新增：给每张卡牌添加点击删除的脚本
+        // 自动添加点击删除脚本
         if (!cardObj.GetComponent<CardDeleteClick>())
         {
             cardObj.AddComponent<CardDeleteClick>();
         }
 
-        cardList.Add(cardObj);
-    }
-
-    // ========== 新增：切换选牌删除模式 ==========
-    private void ToggleDeleteCardMode()
-    {
-        isSelectingCardToDelete = !isSelectingCardToDelete;
-
-        if (isSelectingCardToDelete)
+        // 自动添加卡牌正反面控制脚本
+        CardFaceController faceController = cardObj.GetComponent<CardFaceController>();
+        if (faceController == null)
         {
-            deleteCardButton.GetComponentInChildren<Text>().text = "取消删除";
-            Debug.Log("进入选牌删除模式：点击任意玩家手牌卡牌即可删除");
+            faceController = cardObj.AddComponent<CardFaceController>();
+        }
+
+        // ===================== 核心修改：区分公共牌/其他牌 =====================
+        // 判断当前生成的卡牌是否是公共牌（通过父区域对比）
+        if (parentArea == publicCardArea)
+        {
+            // 公共牌：强制设置为暗面
+            faceController.ShowBackFace();
+            Debug.Log($"生成公共牌：{cardData.cardName} → 暗面");
         }
         else
         {
-            deleteCardButton.GetComponentInChildren<Text>().text = "删除卡牌";
-            Debug.Log("退出选牌删除模式");
+            // 玩家牌/敌人牌：强制设置为亮面
+            faceController.ShowFrontFace();
+            Debug.Log($"生成玩家/敌人牌：{cardData.cardName} → 亮面");
         }
+        // =====================================================================
+
+        cardList.Add(cardObj);
     }
 
-    // ========== 新增：删除指定卡牌（核心方法） ==========
-    public void DeletePlayerCard(GameObject cardToDelete)
+    // ========== 新增：供CardDeleteSystem调用的接口 ==========
+    public void RemovePlayerCard(GameObject cardToDelete)
     {
-        // 1. 校验是否在选牌删除模式
-        if (!isSelectingCardToDelete) return;
-
-        // 2. 从玩家手牌列表中移除
         if (playerCardObjects.Contains(cardToDelete))
         {
             playerCardObjects.Remove(cardToDelete);
-            // 3. 销毁卡牌物体（永久删除，不回牌库）
             Destroy(cardToDelete);
-            // 4. 重新排列剩余手牌
-            RearrangePlayerHand();
-            // 5. 退出选牌删除模式
-            ToggleDeleteCardMode();
-
-            Debug.Log("卡牌已永久删除（不回牌库），剩余手牌数：" + playerCardObjects.Count);
         }
     }
 
-    private void RearrangePlayerHand()
+    // ========== 改为公共方法：供CardDeleteSystem调用 ==========
+    public void RearrangePlayerHand()
     {
         int cardCount = playerCardObjects.Count;
         if (cardCount == 0 || playerHandArea == null) return;
@@ -371,7 +355,7 @@ public class CardDeckSystem : MonoBehaviour
         int cardCount = publicCardObjects.Count;
         if (cardCount == 0 || publicCardArea == null) return;
 
-        float totalWidth = (cardCount - 1) * (cardWidth + cardSpacing);
+        float totalWidth = (cardCount - 1) * (cardWidth + publicCardSpacing);
         float startX = -totalWidth / 2;
 
         for (int i = 0; i < cardCount; i++)
@@ -380,7 +364,7 @@ public class CardDeckSystem : MonoBehaviour
             RectTransform cardRect = cardObj.GetComponent<RectTransform>();
             if (cardRect == null) continue;
 
-            cardRect.anchoredPosition = new Vector2(startX + i * (cardWidth + cardSpacing), 0);
+            cardRect.anchoredPosition = new Vector2(startX + i * (cardWidth + publicCardSpacing), 0);
             cardRect.anchorMin = new Vector2(0.5f, 0.5f);
             cardRect.anchorMax = new Vector2(0.5f, 0.5f);
         }
@@ -448,28 +432,4 @@ public class CardDeckSystem : MonoBehaviour
 public class CardDisplay : MonoBehaviour
 {
     public PlayingCard cardData;
-}
-
-// ========== 新增：卡牌点击删除脚本 ==========
-
-
-public class CardDeleteClick : MonoBehaviour, IPointerClickHandler
-{
-    private CardDeckSystem cardDeckSystem;
-
-    private void Awake()
-    {
-        // 找到CardDeckSystem实例（假设场景中只有一个）
-        cardDeckSystem = FindAnyObjectByType<CardDeckSystem>();
-    }
-
-    // 卡牌被点击时触发
-    public void OnPointerClick(PointerEventData eventData)
-    {
-        // 仅在选牌删除模式下触发删除
-        if (cardDeckSystem != null && cardDeckSystem.IsSelectingCardToDelete)
-        {
-            cardDeckSystem.DeletePlayerCard(gameObject);
-        }
-    }
 }
