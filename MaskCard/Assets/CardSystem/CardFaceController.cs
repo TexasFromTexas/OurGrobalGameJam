@@ -17,6 +17,8 @@ public class CardFaceController : MonoBehaviour
     public bool _isShowingBack = false;
     private Text _autoFoundCardText;
     private CardDisplay _cardDisplay; // 存储卡牌固定数据
+    public PlayingCard bindingCardData; // 绑定的核心数据（唯一数据源）
+    public bool NeedRefreshDisplay = false; // 是否需要刷新显示
 
     private void Awake()
     {
@@ -67,6 +69,7 @@ public class CardFaceController : MonoBehaviour
     public void ShowFrontFace()
     {
         _isShowingBack = false;
+
         ApplyFaceState();
     }
 

@@ -86,7 +86,7 @@ public class CardDeckSystem : MonoBehaviour
     // 事件：回合状态变化时触发
     public Action<bool> OnRoundStateChanged;
 
-    private List<GameObject> playerCardObjects = new List<GameObject>();
+    public List<GameObject> playerCardObjects = new List<GameObject>();
     private List<GameObject> enemyCardObjects = new List<GameObject>();
     private List<GameObject> publicCardObjects = new List<GameObject>();
     public List<GameObject> PublicCardObjects => publicCardObjects;
