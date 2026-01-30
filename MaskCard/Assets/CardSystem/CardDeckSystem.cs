@@ -242,6 +242,41 @@ public class CardDeckSystem : MonoBehaviour
         Debug.Log($"抽牌成功：{drawnCard.cardName}（数值：{drawnCard.rankValue}）已加入玩家手牌，牌库剩余{cardDeck.Count}张");
         return drawnCard;
     }
+    // ========== 新增：多抽一张公牌并明牌 ==========
+    /// <summary>
+    /// 从牌库抽取一张牌作为额外公牌，且直接明牌
+    /// </summary>
+    /// <returns>是否抽取成功</returns>
+    public bool DrawExtraPublicCard()
+    {
+        // 1. 检查牌库是否为空
+        if (cardDeck.Count == 0)
+        {
+            Debug.LogWarning("牌库已空，无法抽取额外公牌！");
+            return false;
+        }
+
+        // 2. 从牌库抽取第一张牌
+        PlayingCard extraCardData = cardDeck[0];
+        cardDeck.RemoveAt(0);
+
+        // 3. 生成公牌物体（复用SpawnSingleCard方法）
+        SpawnSingleCard(extraCardData, publicCardArea, ref publicCardObjects);
+
+        // 4. 找到刚生成的额外公牌，强制设为明牌（覆盖SpawnSingleCard的暗牌逻辑）
+        GameObject extraCard = publicCardObjects[publicCardObjects.Count - 1];
+        CardFaceController faceController = extraCard.GetComponent<CardFaceController>();
+        if (faceController != null)
+        {
+            faceController.ShowFrontFace();
+            Debug.Log($"抽取额外公牌：{extraCardData.cardName}（明牌）");
+        }
+
+        // 5. 重新排列公牌布局（避免重叠）
+        RearrangePublicCards();
+
+        return true;
+    }
 
     private void SpawnSingleCard(PlayingCard cardData, Transform parentArea, ref List<GameObject> cardList)
     {

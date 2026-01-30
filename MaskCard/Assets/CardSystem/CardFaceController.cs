@@ -8,69 +8,82 @@ public class CardFaceController : MonoBehaviour
     [Header("卡牌正反面引用")]
     public Image cardBackImage; // 卡牌背面（暗牌）
     public Image cardFrontImage; // 卡牌正面（明牌）
-    public Text cardText; // 卡牌文字（正面，可选：留空则自动查找）
+    public Text cardText; // 卡牌文字（正面）
 
     [Header("当前状态（只读）")]
     [SerializeField, ReadOnly]
     private string currentCardState = "未初始化";
 
-    private bool _isShowingBack = false;
-    private Text _autoFoundCardText; // 自动找到的文字组件
+    public bool _isShowingBack = false;
+    private Text _autoFoundCardText;
+    private CardDisplay _cardDisplay; // 存储卡牌固定数据
 
     private void Awake()
     {
-        // ❶ 把自动查找移到Awake()，确保在ShowBackFace之前就初始化
+        // 获取卡牌固定数据（生成时就确定的牌面属性）
+        _cardDisplay = GetComponent<CardDisplay>();
         if (cardText == null)
-        {
-            _autoFoundCardText = GetComponentInChildren<Text>(true); // 包含禁用的组件
-        }
-    }
-
-    private void Update()
-    {
-        UpdateStateDisplay();
-    }
-
-    public void ShowBackFace()
-    {
-        // 控制图片显示
-        if (cardBackImage != null) cardBackImage.gameObject.SetActive(true);
-        if (cardFrontImage != null) cardFrontImage.gameObject.SetActive(false);
-
-        // ❷ 强制再次查找（防止Awake没找到）
-        if (cardText == null && _autoFoundCardText == null)
         {
             _autoFoundCardText = GetComponentInChildren<Text>(true);
         }
+    }
 
-        // 控制文字显示（双保险）
-        if (cardText != null)
-            cardText.gameObject.SetActive(false);
+    // ========== 新增：获取牌面固定信息 ==========
+    /// <summary>
+    /// 获取卡牌固定的牌面文字（比如“黑桃A”）
+    /// </summary>
+    public string GetCardText()
+    {
+        if (_cardDisplay != null && _cardDisplay.cardData != null)
+        {
+            return _cardDisplay.cardData.cardName;
+        }
+        else if (cardText != null)
+        {
+            return cardText.text;
+        }
         else if (_autoFoundCardText != null)
-            _autoFoundCardText.gameObject.SetActive(false);
+        {
+            return _autoFoundCardText.text;
+        }
+        return "未知卡牌";
+    }
 
+    /// <summary>
+    /// 获取卡牌正面图片
+    /// </summary>
+    public Sprite GetCardFrontSprite()
+    {
+        return cardFrontImage != null ? cardFrontImage.sprite : null;
+    }
+
+    // ========== 原有方法（不动） ==========
+    public void ShowBackFace()
+    {
         _isShowingBack = true;
+        ApplyFaceState();
     }
 
     public void ShowFrontFace()
     {
-        // 控制图片显示
-        if (cardBackImage != null) cardBackImage.gameObject.SetActive(false);
-        if (cardFrontImage != null) cardFrontImage.gameObject.SetActive(true);
+        _isShowingBack = false;
+        ApplyFaceState();
+    }
 
-        // 强制再次查找
+    private void ApplyFaceState()
+    {
+        bool shouldShowFront = !_isShowingBack;
+        if (cardBackImage != null) cardBackImage.gameObject.SetActive(!shouldShowFront);
+        if (cardFrontImage != null) cardFrontImage.gameObject.SetActive(shouldShowFront);
+
         if (cardText == null && _autoFoundCardText == null)
         {
             _autoFoundCardText = GetComponentInChildren<Text>(true);
         }
-
-        // 控制文字显示（双保险）
         if (cardText != null)
-            cardText.gameObject.SetActive(true);
+            cardText.gameObject.SetActive(shouldShowFront);
         else if (_autoFoundCardText != null)
-            _autoFoundCardText.gameObject.SetActive(true);
-
-        _isShowingBack = false;
+            _autoFoundCardText.gameObject.SetActive(shouldShowFront);
     }
 
     private void UpdateStateDisplay()
