@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.UI;
 using System.Linq;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 // 花色枚举
 public enum CardSuit
@@ -10,7 +11,7 @@ public enum CardSuit
     Spade, Heart, Club, Diamond
 }
 
-// 你修改后的点数枚举（带自定义数值，方便比较大小）
+// 点数枚举
 public enum CardRank
 {
     Ace = 14,
@@ -19,22 +20,20 @@ public enum CardRank
     Eight = 8, Nine = 9, Ten = 10, Jack = 11, Queen = 12, King = 13, Joker = 16
 }
 
-// 卡牌数据类（核心修改：适配自定义枚举值的名称生成）
 [Serializable]
 public class PlayingCard
 {
     public CardSuit suit;
     public CardRank rank;
-    public string cardName; // 卡牌文字信息（如"黑桃A"）
-    public int rankValue; // 新增：存储枚举的数值，方便后续比较大小
+    public string cardName;
+    public int rankValue;
 
     public PlayingCard(CardSuit suit, CardRank rank)
     {
         this.suit = suit;
         this.rank = rank;
-        this.rankValue = (int)rank; // 记录数值，方便后续比较
+        this.rankValue = (int)rank;
 
-        // 1. 处理花色文字
         string suitStr = suit switch
         {
             CardSuit.Spade => "黑桃",
@@ -44,48 +43,47 @@ public class PlayingCard
             _ => ""
         };
 
-        // 2. 核心修改：适配自定义枚举值的点数文字映射
         string rankStr = rank switch
         {
-            CardRank.Ace => "A",       // 14 → A
-            CardRank.Two => "2",       // 15 → 2
-            CardRank.Three => "3",     // 3 → 3
-            CardRank.Four => "4",      // 4 → 4
-            CardRank.Five => "5",      // 5 → 5
-            CardRank.Six => "6",       // 6 → 6
-            CardRank.Seven => "7",     // 7 → 7
-            CardRank.Eight => "8",     // 8 → 8
-            CardRank.Nine => "9",      // 9 → 9
-            CardRank.Ten => "10",      // 10 → 10
-            CardRank.Jack => "J",      // 11 → J
-            CardRank.Queen => "Q",     // 12 → Q
-            CardRank.King => "K",      // 13 → K
-            CardRank.Joker => "鬼牌",  // 16 → 鬼牌
+            CardRank.Ace => "A",
+            CardRank.Two => "2",
+            CardRank.Three => "3",
+            CardRank.Four => "4",
+            CardRank.Five => "5",
+            CardRank.Six => "6",
+            CardRank.Seven => "7",
+            CardRank.Eight => "8",
+            CardRank.Nine => "9",
+            CardRank.Ten => "10",
+            CardRank.Jack => "J",
+            CardRank.Queen => "Q",
+            CardRank.King => "K",
+            CardRank.Joker => "鬼牌",
             _ => ""
         };
 
-        // 3. 生成最终卡牌名称（鬼牌不需要花色）
         if (rank == CardRank.Joker)
         {
-            cardName = rankStr; // 鬼牌直接显示“鬼牌”
+            cardName = rankStr;
         }
         else
         {
-            cardName = $"{suitStr}{rankStr}"; // 如“黑桃A”、“红桃2”
+            cardName = $"{suitStr}{rankStr}";
         }
     }
 }
 
 public class CardDeckSystem : MonoBehaviour
 {
-    // ========== 核心：唯一的54张牌库（队列式） ==========
-    public List<PlayingCard> cardDeck = new List<PlayingCard>(); // 唯一牌库（初始54张，队列FIFO）
+    // ========== 核心数据 ==========
+    public List<PlayingCard> cardDeck = new List<PlayingCard>();
+    private bool isInRound = false;
+    public bool IsInRound => isInRound;
 
-    // ========== 回合状态标记 ==========
-    private bool isInRound = false; // 是否处于回合中（默认不在）
-    public bool IsInRound => isInRound; // 供外部脚本获取回合状态
+    // 新增：选牌删除模式标记
+    private bool isSelectingCardToDelete = false;
+    public bool IsSelectingCardToDelete => isSelectingCardToDelete;
 
-    // 手牌/公共牌（存储实例化的卡牌GameObject）
     private List<GameObject> playerCardObjects = new List<GameObject>();
     private List<GameObject> enemyCardObjects = new List<GameObject>();
     private List<GameObject> publicCardObjects = new List<GameObject>();
@@ -94,47 +92,44 @@ public class CardDeckSystem : MonoBehaviour
     [Header("UI组件")]
     public Button startRoundButton;
     public Button endRoundButton;
-    public GameObject cardPrefab; // 拖入卡牌预制体
-    public Transform playerHandArea; // 拖入玩家手牌区域
-    public Transform enemyHandArea; // 拖入敌人手牌区域
-    public Transform publicCardArea; // 拖入公共牌区域
+    // 新增：删除卡牌按钮
+    public Button deleteCardButton;
+    public GameObject cardPrefab;
+    public Transform playerHandArea;
+    public Transform enemyHandArea;
+    public Transform publicCardArea;
 
-    // 卡牌布局参数（间距现在会真正生效）
     [Header("卡牌布局")]
-    public float cardSpacing = 10f; // 调小这个值（如5/10）让卡牌更紧凑
-    public float cardWidth = 80f; // 手动指定卡牌宽度（避免获取失败，可和预制体宽度一致）
+    public float cardSpacing = 10f;
+    public float cardWidth = 80f;
 
     private void Start()
     {
-        // 1. 初始化54张牌库
         InitializeCardDeck();
-        // 2. 初始洗牌（随机队列顺序）
         ShuffleDeck(ref cardDeck);
 
-        // 绑定按钮事件
         startRoundButton.onClick.AddListener(StartNewRound);
         endRoundButton.onClick.AddListener(EndCurrentRound);
+        // 新增：绑定删除按钮事件
+        deleteCardButton.onClick.AddListener(ToggleDeleteCardMode);
         endRoundButton.interactable = false;
+        // 初始禁用删除按钮
+        deleteCardButton.interactable = false;
 
-        // 检查关键引用
         CheckReferences();
 
-        // 自动获取卡牌预制体宽度（备用）
         if (cardPrefab != null && cardWidth <= 0)
         {
             cardWidth = cardPrefab.GetComponent<RectTransform>().sizeDelta.x;
         }
     }
 
-    // ========== 初始化54张唯一牌库 ==========
     private void InitializeCardDeck()
     {
         cardDeck.Clear();
 
-        // 添加4花色×13点数的52张常规牌（适配新枚举）
         foreach (CardSuit suit in Enum.GetValues(typeof(CardSuit)))
         {
-            // 按你定义的枚举顺序添加：Ace→Two→Three→...→King
             CardRank[] normalRanks = new CardRank[]
             {
                 CardRank.Ace, CardRank.Two, CardRank.Three, CardRank.Four, CardRank.Five,
@@ -147,49 +142,42 @@ public class CardDeckSystem : MonoBehaviour
             }
         }
 
-        // 添加2张鬼牌，凑齐54张
         cardDeck.Add(new PlayingCard(CardSuit.Spade, CardRank.Joker));
         cardDeck.Add(new PlayingCard(CardSuit.Heart, CardRank.Joker));
 
         Debug.Log($"初始化完成：唯一牌库共{cardDeck.Count}张牌");
     }
 
-    // ========== 检查引用是否完整（容错） ==========
     private void CheckReferences()
     {
         if (cardPrefab == null) Debug.LogError("请给CardPrefab字段拖入卡牌预制体！");
         if (playerHandArea == null) Debug.LogError("请给PlayerHandArea字段拖入玩家手牌区域！");
         if (enemyHandArea == null) Debug.LogError("请给EnemyHandArea字段拖入敌人手牌区域！");
         if (publicCardArea == null) Debug.LogError("请给PublicCardArea字段拖入公共牌区域！");
+        // 新增：检查删除按钮引用
+        if (deleteCardButton == null) Debug.LogError("请给DeleteCardButton字段拖入删除卡牌按钮！");
     }
 
-    // ========== 开始新回合（标记回合中+抽初始牌） ==========
     private void StartNewRound()
     {
-        // 清空上一轮卡牌
         ClearAllCardObjects();
 
-        // 检查牌库是否足够抽9张（玩家2+公共5+敌人2）
         if (cardDeck.Count < 9)
         {
             Debug.LogWarning($"牌库剩余{cardDeck.Count}张，不足9张，无法开始新回合！");
             return;
         }
 
-        // 标记为回合中
         isInRound = true;
 
-        // 1. 抽2张到玩家手牌
         List<PlayingCard> playerHand = new List<PlayingCard>();
         DrawCardsFromDeck(ref playerHand, 2);
         foreach (var card in playerHand)
         {
             SpawnSingleCard(card, playerHandArea, ref playerCardObjects);
         }
-        // 重新排列玩家手牌（关键：让间距生效）
         RearrangePlayerHand();
 
-        // 2. 抽5张公共牌
         List<PlayingCard> publicCards = new List<PlayingCard>();
         DrawCardsFromDeck(ref publicCards, 5);
         foreach (var card in publicCards)
@@ -198,7 +186,6 @@ public class CardDeckSystem : MonoBehaviour
         }
         RearrangePublicCards();
 
-        // 3. 抽2张到敌人手牌
         List<PlayingCard> enemyHand = new List<PlayingCard>();
         DrawCardsFromDeck(ref enemyHand, 2);
         foreach (var card in enemyHand)
@@ -207,89 +194,81 @@ public class CardDeckSystem : MonoBehaviour
         }
         RearrangeEnemyHand();
 
-        // 按钮状态切换
         endRoundButton.interactable = true;
         startRoundButton.interactable = false;
+        // 新增：回合开始时启用删除按钮
+        deleteCardButton.interactable = true;
 
         Debug.Log($"新回合开始：牌库剩余{cardDeck.Count}张，当前状态：回合中");
     }
 
-    // ========== 结束回合（回收所有牌+标记回合外） ==========
     private void EndCurrentRound()
     {
-        // 1. 收集所有抽出的牌
+        // 新增：结束回合时退出选牌删除模式
+        if (isSelectingCardToDelete)
+        {
+            ToggleDeleteCardMode();
+        }
+
         List<PlayingCard> drawnCards = new List<PlayingCard>();
         drawnCards.AddRange(GetCardDataFromObjects(playerCardObjects));
         drawnCards.AddRange(GetCardDataFromObjects(enemyCardObjects));
         drawnCards.AddRange(GetCardDataFromObjects(publicCardObjects));
 
-        // 2. 回收牌到牌库
         cardDeck.AddRange(drawnCards);
         Debug.Log($"回合结束：回收{drawnCards.Count}张牌，牌库当前共{cardDeck.Count}张");
 
-        // 3. 洗牌
         ShuffleDeck(ref cardDeck);
-
-        // 4. 清空卡牌物体
         ClearAllCardObjects();
 
-        // 标记为回合外
         isInRound = false;
 
-        // 按钮状态切换
         endRoundButton.interactable = false;
         startRoundButton.interactable = true;
+        // 新增：回合结束时禁用删除按钮
+        deleteCardButton.interactable = false;
 
         Debug.Log($"回合已结束，当前状态：回合外");
     }
 
-    // ========== 公共方法：抽单张牌到玩家手牌（带回合校验） ==========
     public PlayingCard DrawOneCardToPlayerHand()
     {
-        // 1. 校验是否在回合中
         if (!isInRound)
         {
             Debug.LogWarning("当前不在回合中，禁止抽卡！请先点击“开始回合”");
             return null;
         }
 
-        // 2. 检查牌库是否为空
         if (cardDeck.Count == 0)
         {
             Debug.LogWarning("牌库已空，无法抽牌！");
             return null;
         }
 
-        // 3. 队列逻辑：从头部抽1张
         PlayingCard drawnCard = cardDeck[0];
         cardDeck.RemoveAt(0);
 
-        // 4. 生成单张卡牌并重新排列所有手牌
         SpawnSingleCard(drawnCard, playerHandArea, ref playerCardObjects);
-        RearrangePlayerHand(); // 关键：新增牌后重新排列，间距生效
+        RearrangePlayerHand();
 
         Debug.Log($"抽牌成功：{drawnCard.cardName}（数值：{drawnCard.rankValue}）已加入玩家手牌，牌库剩余{cardDeck.Count}张");
         return drawnCard;
     }
 
-    // ========== 生成单张卡牌（删除了高亮组件相关代码） ==========
     private void SpawnSingleCard(PlayingCard cardData, Transform parentArea, ref List<GameObject> cardList)
     {
         if (parentArea == null || cardPrefab == null) return;
 
-        // 实例化卡牌
         GameObject cardObj = Instantiate(cardPrefab, parentArea);
         RectTransform cardRect = cardObj.GetComponent<RectTransform>();
         CardDisplay cardDisplay = cardObj.GetComponent<CardDisplay>();
 
-        // 绑定卡牌数据
         if (cardDisplay == null)
         {
             cardDisplay = cardObj.AddComponent<CardDisplay>();
         }
         cardDisplay.cardData = cardData;
 
-        // 显示卡牌名称（现在会正确显示“A/2/3”，而非“14/15/3”）
         Text cardText = cardObj.GetComponentInChildren<Text>();
         if (cardText != null)
         {
@@ -300,35 +279,73 @@ public class CardDeckSystem : MonoBehaviour
             Debug.LogError($"卡牌预制体中找不到Text组件！");
         }
 
-        // 加入卡牌列表
+        // 新增：给每张卡牌添加点击删除的脚本
+        if (!cardObj.GetComponent<CardDeleteClick>())
+        {
+            cardObj.AddComponent<CardDeleteClick>();
+        }
+
         cardList.Add(cardObj);
     }
 
-    // ========== 重新排列玩家手牌（核心：让间距生效） ==========
+    // ========== 新增：切换选牌删除模式 ==========
+    private void ToggleDeleteCardMode()
+    {
+        isSelectingCardToDelete = !isSelectingCardToDelete;
+
+        if (isSelectingCardToDelete)
+        {
+            deleteCardButton.GetComponentInChildren<Text>().text = "取消删除";
+            Debug.Log("进入选牌删除模式：点击任意玩家手牌卡牌即可删除");
+        }
+        else
+        {
+            deleteCardButton.GetComponentInChildren<Text>().text = "删除卡牌";
+            Debug.Log("退出选牌删除模式");
+        }
+    }
+
+    // ========== 新增：删除指定卡牌（核心方法） ==========
+    public void DeletePlayerCard(GameObject cardToDelete)
+    {
+        // 1. 校验是否在选牌删除模式
+        if (!isSelectingCardToDelete) return;
+
+        // 2. 从玩家手牌列表中移除
+        if (playerCardObjects.Contains(cardToDelete))
+        {
+            playerCardObjects.Remove(cardToDelete);
+            // 3. 销毁卡牌物体（永久删除，不回牌库）
+            Destroy(cardToDelete);
+            // 4. 重新排列剩余手牌
+            RearrangePlayerHand();
+            // 5. 退出选牌删除模式
+            ToggleDeleteCardMode();
+
+            Debug.Log("卡牌已永久删除（不回牌库），剩余手牌数：" + playerCardObjects.Count);
+        }
+    }
+
     private void RearrangePlayerHand()
     {
         int cardCount = playerCardObjects.Count;
         if (cardCount == 0 || playerHandArea == null) return;
 
-        // 计算总宽度和起始位置（居中排列）
         float totalWidth = (cardCount - 1) * (cardWidth + cardSpacing);
         float startX = -totalWidth / 2;
 
-        // 遍历所有手牌，重新设置位置
         for (int i = 0; i < cardCount; i++)
         {
             GameObject cardObj = playerCardObjects[i];
             RectTransform cardRect = cardObj.GetComponent<RectTransform>();
             if (cardRect == null) continue;
 
-            // 设置位置（间距由cardSpacing控制）
             cardRect.anchoredPosition = new Vector2(startX + i * (cardWidth + cardSpacing), 0);
             cardRect.anchorMin = new Vector2(0.5f, 0.5f);
             cardRect.anchorMax = new Vector2(0.5f, 0.5f);
         }
     }
 
-    // ========== 重新排列敌人手牌 ==========
     private void RearrangeEnemyHand()
     {
         int cardCount = enemyCardObjects.Count;
@@ -349,7 +366,6 @@ public class CardDeckSystem : MonoBehaviour
         }
     }
 
-    // ========== 重新排列公共牌 ==========
     private void RearrangePublicCards()
     {
         int cardCount = publicCardObjects.Count;
@@ -370,14 +386,12 @@ public class CardDeckSystem : MonoBehaviour
         }
     }
 
-    // ========== 核心：从队列头部抽指定数量的牌 ==========
     private void DrawCardsFromDeck(ref List<PlayingCard> targetHand, int drawCount)
     {
         for (int i = 0; i < drawCount; i++)
         {
             if (cardDeck.Count == 0) break;
 
-            // 队列FIFO：从头部抽牌
             PlayingCard drawnCard = cardDeck[0];
             targetHand.Add(drawnCard);
             cardDeck.RemoveAt(0);
@@ -386,7 +400,6 @@ public class CardDeckSystem : MonoBehaviour
         }
     }
 
-    // ========== 清空所有卡牌 ==========
     private void ClearAllCardObjects()
     {
         ClearCardObjects(ref playerCardObjects);
@@ -394,7 +407,6 @@ public class CardDeckSystem : MonoBehaviour
         ClearCardObjects(ref publicCardObjects);
     }
 
-    // ========== 清空指定区域的卡牌 ==========
     private void ClearCardObjects(ref List<GameObject> cardObjectList)
     {
         foreach (GameObject cardObj in cardObjectList)
@@ -407,7 +419,6 @@ public class CardDeckSystem : MonoBehaviour
         cardObjectList.Clear();
     }
 
-    // ========== 从卡牌物体中提取数据（容错） ==========
     private List<PlayingCard> GetCardDataFromObjects(List<GameObject> cardObjects)
     {
         List<PlayingCard> dataList = new List<PlayingCard>();
@@ -423,7 +434,6 @@ public class CardDeckSystem : MonoBehaviour
         return dataList;
     }
 
-    // ========== Fisher-Yates洗牌算法 ==========
     private void ShuffleDeck(ref List<PlayingCard> deck)
     {
         for (int i = deck.Count - 1; i > 0; i--)
@@ -435,8 +445,31 @@ public class CardDeckSystem : MonoBehaviour
     }
 }
 
-// 卡牌显示组件（保留）
 public class CardDisplay : MonoBehaviour
 {
-    public PlayingCard cardData; // 绑定卡牌数据
+    public PlayingCard cardData;
+}
+
+// ========== 新增：卡牌点击删除脚本 ==========
+
+
+public class CardDeleteClick : MonoBehaviour, IPointerClickHandler
+{
+    private CardDeckSystem cardDeckSystem;
+
+    private void Awake()
+    {
+        // 找到CardDeckSystem实例（假设场景中只有一个）
+        cardDeckSystem = FindAnyObjectByType<CardDeckSystem>();
+    }
+
+    // 卡牌被点击时触发
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        // 仅在选牌删除模式下触发删除
+        if (cardDeckSystem != null && cardDeckSystem.IsSelectingCardToDelete)
+        {
+            cardDeckSystem.DeletePlayerCard(gameObject);
+        }
+    }
 }

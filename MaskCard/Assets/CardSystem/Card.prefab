@@ -89,6 +89,7 @@ GameObject:
   m_Component:
   - component: {fileID: 9060203066925181435}
   - component: {fileID: 6114204584964601378}
+  - component: {fileID: -4341387273073712365}
   - component: {fileID: 7906025058250874523}
   m_Layer: 5
   m_Name: Card
@@ -125,6 +126,24 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4132936062147507488}
   m_CullTransparentMesh: 1
+--- !u!114 &-4341387273073712365
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4132936062147507488}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ffc5d0ae17ece943991951f2c1c585e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  normalColor: {r: 1, g: 1, b: 1, a: 1}
+  highlightColor: {r: 1.2, g: 1.2, b: 1.2, a: 1}
+  useBorderHighlight: 1
+  cardBorder: {fileID: 0}
+  borderNormalColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  borderHighlightColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!114 &7906025058250874523
 MonoBehaviour:
   m_ObjectHideFlags: 0
