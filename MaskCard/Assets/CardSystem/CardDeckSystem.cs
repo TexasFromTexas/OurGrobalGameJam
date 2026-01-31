@@ -97,8 +97,8 @@ public class CardDeckSystem : MonoBehaviour
     public Action<bool> OnRoundStateChanged;
 
     public List<GameObject> playerCardObjects = new List<GameObject>();
-    private List<GameObject> enemyCardObjects = new List<GameObject>();
-    private List<GameObject> publicCardObjects = new List<GameObject>();
+    public List<GameObject> enemyCardObjects = new List<GameObject>();
+    public List<GameObject> publicCardObjects = new List<GameObject>();
     public List<GameObject> PublicCardObjects => publicCardObjects;
 
     // UI引用（已删除deleteCardButton）
