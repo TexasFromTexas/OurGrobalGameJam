@@ -49,12 +49,13 @@ Material:
     - _BurnWidth: 0.434
     - _Dissolve: -1
     - _EnableExternalAlpha: 0
+    - _EnableGlow: 0
     - _GlowIntensity: 5
     - _GlowSize: 0.1
     - _GlowSoftness: 0.732
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _Flip: {r: 1, g: 1, b: 1, a: 1}
-    - _GlowColor: {r: 2.4618883, g: 2.7465181, b: 0, a: 1}
+    - _GlowColor: {r: 2.4618883, g: 2.7465181, b: 0, a: 0}
     - _RendererColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []

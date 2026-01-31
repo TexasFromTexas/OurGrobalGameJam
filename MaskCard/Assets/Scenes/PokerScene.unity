@@ -1927,6 +1927,7 @@ MonoBehaviour:
   mouseAction: {fileID: 0}
   peekOffset: {x: 0, y: 0}
   dissolveDuration: 1.2
+  maxPeekCount: 2
 --- !u!114 &714463198
 MonoBehaviour:
   m_ObjectHideFlags: 0
