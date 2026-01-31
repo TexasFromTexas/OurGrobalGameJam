@@ -10,12 +10,14 @@ Shader "Custom/URP2DGlowSpriteLit"
         _GlowSize ("Glow Size", Range(0, 0.1)) = 0.02
         _GlowIntensity ("Glow Intensity", Range(0, 5)) = 1.0
         _GlowSoftness ("Glow Softness", Range(0, 1)) = 0.5
+        [Toogle] _EnableGlow("Enable Glow", Float) = 0
 
         _Dissolve("Dissolve", Range(-1,1)) = 0.0
         _BurnWidth("Burn Width", Range(0,0.5)) = 0
         _BurnIntensity("Burn Intensity", Range(0,5)) = 1.0
         _MaskTex("Burn Mask", 2D) = "white" {}
         _NoiseTex ("Noise Texture (R)", 2D) = "gray" {}
+
     }
 
     SubShader
@@ -91,6 +93,7 @@ Shader "Custom/URP2DGlowSpriteLit"
             float _GlowSize;
             float _GlowIntensity;
             half _GlowSoftness;
+            half _EnableGlow;
 
             sampler2D _NoiseTex;
             sampler2D _MaskTex;
@@ -149,7 +152,7 @@ Shader "Custom/URP2DGlowSpriteLit"
                 float4 glow = _GlowColor * outerGlowMask * _GlowIntensity;
 
                 // 叠加发光和原图颜色
-                finalColor.rgb += glow.rgb;
+                finalColor.rgb += _EnableGlow *  glow.rgb;
                 finalColor.a = max(mainTex.a, glow.a * _GlowIntensity);
 
                 float noise = tex2D(_NoiseTex, input.uv).r - 0.0001f;
