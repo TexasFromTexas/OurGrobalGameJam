@@ -385,8 +385,6 @@ public class Judge
 
         // 获取当前牌型
         PokerHandType handType = GetHandTypeAdvanced(enemyCards);
-        Debug.Log("本回合的牌型为：" + handType.ToString() + " 加注倍率:" + raiseRate + " 根注倍率:" + foldRate + " 弃牌倍率:" + dropRate);
-
         // 根据手牌数量选择对应的行为概率
         int cardCount = enemyCards.Count;
 
@@ -441,6 +439,8 @@ public class Judge
             foldRate /= total;
             dropRate /= total;
         }
+        Debug.Log("本回合的牌型为：" + handType.ToString() + " 加注倍率:" + raiseRate + " 根注倍率:" + foldRate + " 弃牌倍率:" + dropRate);
+
     }
 
     /// <summary>
@@ -479,8 +479,8 @@ public class Judge
             return PokerHandType.FullHouse;
         else if (threeOfAKind > 0 && cards.Count == 4)
             return PokerHandType.FullHouse;
-        else if (isPotentialFlush && isPotentialStraight)
-            return PokerHandType.StraightFlush; // 简化处理
+        //else if (isPotentialFlush && isPotentialStraight)
+        //    return PokerHandType.StraightFlush; // 简化处理
         else if (threeOfAKind > 0 && cards.Count == 4)
             return PokerHandType.ThreeOfAKind;
         else if (pairs >= 2)
