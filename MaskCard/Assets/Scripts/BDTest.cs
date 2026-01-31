@@ -42,8 +42,8 @@ public class BDTest : MonoBehaviour
     }
 
     /// <summary>
-    /// ¸ù¾ÝÅÆµÄ»¨É«ºÍÅÆÃæÖµÐ´³öÅÆÃû
-    /// ½ö²âÊÔÓÃ
+    /// ï¿½ï¿½ï¿½ï¿½ï¿½ÆµÄ»ï¿½É«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÖµÐ´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    /// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     /// </summary>
     /// <param name="cards"></param>
     private void SetCardsName(List<PlayingCard> cards)
@@ -52,10 +52,10 @@ public class BDTest : MonoBehaviour
         {
             string suitStr = item.suit switch
             {
-                CardSuit.Spade => "ºÚÌÒ",
-                CardSuit.Heart => "ºìÌÒ",
-                CardSuit.Club => "Ã·»¨",
-                CardSuit.Diamond => "·½¿é",
+                CardSuit.Spade => "ï¿½ï¿½ï¿½ï¿½",
+                CardSuit.Heart => "ï¿½ï¿½ï¿½ï¿½",
+                CardSuit.Club => "Ã·ï¿½ï¿½",
+                CardSuit.Diamond => "ï¿½ï¿½ï¿½ï¿½",
                 _ => ""
             };
             string rankStr = item.rank switch
@@ -85,32 +85,32 @@ public class BDTest : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            //´Ë´¦ÐèÒªÅÐ¶Ï¹«ÅÆÖÐÊÇ·ñÓÐ¹íÅÆ
+            //ï¿½Ë´ï¿½ï¿½ï¿½Òªï¿½Ð¶Ï¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ï¿½Ð¹ï¿½ï¿½ï¿½
 
 
             judge.GetResult(myCards, enemyCards, out myHandCards, out myHandsType, out enemyHandCards, out enemyHandsType, out win);
-            //´òÓ¡myHandCards
+            //ï¿½ï¿½Ó¡myHandCards
             StringBuilder sb = new StringBuilder();
             foreach (var card in myHandCards)
             {
                 sb.Append(card.cardName + " ");
             }
-            Debug.Log("ÎÒµÄÅÆÐÍÊÇ£º" + myHandsType + "£¬ÅÆÐÍÊÇ£º" + sb.ToString());
-            //´òÓ¡enemyHandCards
+            Debug.Log("ï¿½Òµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç£ï¿½" + myHandsType + "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç£ï¿½" + sb.ToString());
+            //ï¿½ï¿½Ó¡enemyHandCards
             sb = new StringBuilder();
             foreach (var card in enemyHandCards)
             {
                 sb.Append(card.cardName + " ");
             }
-            Debug.Log("µÐÈËµÄÅÆÐÍÊÇ£º" + enemyHandsType + "£¬ÅÆÐÍÊÇ£º" + sb.ToString());
-            //´òÓ¡½á¹û
+            Debug.Log("ï¿½ï¿½ï¿½Ëµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç£ï¿½" + enemyHandsType + "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç£ï¿½" + sb.ToString());
+            //ï¿½ï¿½Ó¡ï¿½ï¿½ï¿½
             if (win)
             {
-                Debug.Log("ÎÒÓ®ÁË£¡");
+                Debug.Log("ï¿½ï¿½Ó®ï¿½Ë£ï¿½");
             }
             else
             {
-                Debug.Log("ÎÒÊäÁË£¡");
+                Debug.Log("ï¿½ï¿½ï¿½ï¿½ï¿½Ë£ï¿½");
             }
         }
     }

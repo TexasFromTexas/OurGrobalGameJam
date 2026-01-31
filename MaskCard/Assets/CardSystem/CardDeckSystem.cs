@@ -288,7 +288,7 @@ public class CardDeckSystem : MonoBehaviour
         return true;
     }
 
-    private void SpawnSingleCard(PlayingCard cardData, Transform parentArea, ref List<GameObject> cardList)
+    public void SpawnSingleCard(PlayingCard cardData, Transform parentArea, ref List<GameObject> cardList)
     {
         if (parentArea == null || cardPrefab == null) return;
 
@@ -375,7 +375,7 @@ public class CardDeckSystem : MonoBehaviour
         }
     }
 
-    private void RearrangeEnemyHand()
+    public void RearrangeEnemyHand()
     {
         int cardCount = enemyCardObjects.Count;
         if (cardCount == 0 || enemyHandArea == null) return;
@@ -395,7 +395,7 @@ public class CardDeckSystem : MonoBehaviour
         }
     }
 
-    private void RearrangePublicCards()
+    public void RearrangePublicCards()
     {
         int cardCount = publicCardObjects.Count;
         if (cardCount == 0 || publicCardArea == null) return;
@@ -434,7 +434,7 @@ public class CardDeckSystem : MonoBehaviour
         }
     }
 
-    private void DrawCardsFromDeck(ref List<PlayingCard> targetHand, int drawCount)
+    public void DrawCardsFromDeck(ref List<PlayingCard> targetHand, int drawCount)
     {
         for (int i = 0; i < drawCount; i++)
         {
