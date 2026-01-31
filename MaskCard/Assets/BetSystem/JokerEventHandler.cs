@@ -25,8 +25,11 @@ namespace BetSystem
             // 订阅鬼牌事件
             if (bridge != null)
             {
-                bridge.onJokerDetected.AddListener(OnJokerTriggered);
-                Debug.Log("[JokerEventHandler] 已订阅鬼牌事件");
+                // Subscribe to both new events
+                bridge.onPublicJokerRevealed.AddListener(() => OnJokerTriggered(false, false)); // Public trigger, params don't matter much for existing logic if it re-checks
+                bridge.onHandJokerRevealed.AddListener(OnJokerTriggered);
+                
+                Debug.Log("[JokerEventHandler] 已订阅鬼牌事件 (Public & Hand)");
             }
             else
             {
@@ -335,7 +338,8 @@ namespace BetSystem
         {
             if (bridge != null)
             {
-                bridge.onJokerDetected.RemoveListener(OnJokerTriggered);
+                bridge.onPublicJokerRevealed.RemoveListener(() => OnJokerTriggered(false, false));
+                bridge.onHandJokerRevealed.RemoveListener(OnJokerTriggered);
             }
         }
     }

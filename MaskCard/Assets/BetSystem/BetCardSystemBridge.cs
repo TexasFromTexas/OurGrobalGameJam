@@ -12,7 +12,10 @@ namespace BetSystem
 
         [Header("Joker Logic")]
         public bool stopShowdownIfJokerFound = true; 
-        public UnityEvent<bool, bool> onJokerDetected; // (hasPlayerJoker, hasEnemyJoker)
+        
+        // Split Events as requested
+        public UnityEvent onPublicJokerRevealed; // Triggered during Showdown/Win Check if public has joker
+        public UnityEvent<bool, bool> onHandJokerRevealed; // (hasPlayerHandJoker, hasEnemyHandJoker) - Triggered anytime
 
         private void Start()
         {
@@ -24,19 +27,47 @@ namespace BetSystem
                 betManager.onChipsNegative.AddListener(RevealAllCommunityCards);
                 betManager.onPhaseChanged.AddListener(OnPhaseChanged);
                 betManager.onNewRoundStarted.AddListener(OnBettingRoundRestarted);
-                
-                // NEW: Listen for Fold to check Jokers
-                betManager.onFold.AddListener(OnFoldCheckJokers);
             }
         }
 
-        private void OnFoldCheckJokers(bool isPlayerFolded)
+        private void Update()
         {
-            // When someone folds, we check for *revealed* Jokers immediately.
-            // Note: Hand cards of the folder are likely hidden. Public cards might be revealed.
-            CheckAndTriggerJokerLogic(true); 
-            // 'true' here means we want to lock settlement if found. 
-            // If Check returns true (Joker found), it handles the locking.
+            // "Anytime" check for Hand Jokers
+            // We check every frame (or could throttle) if any HAND card is a revealed Joker.
+            CheckHandJokersAnytime();
+        }
+
+        private void CheckHandJokersAnytime()
+        {
+            if (cardDeckSystem == null) return;
+            
+            // Note: Reuse HasRevealedJoker helper
+            bool playerHandHas = HasRevealedJoker(cardDeckSystem.playerCardObjects);
+            
+            bool enemyHandHas = false;
+            // Check enemy list or transform
+            if (cardDeckSystem.enemyCardObjects != null && cardDeckSystem.enemyCardObjects.Count > 0)
+            {
+                 enemyHandHas = HasRevealedJoker(cardDeckSystem.enemyCardObjects);
+            }
+            else if (cardDeckSystem.enemyHandArea != null)
+            {
+                 enemyHandHas = HasRevealedJokerInTransform(cardDeckSystem.enemyHandArea);
+            }
+
+            if (playerHandHas || enemyHandHas)
+            {
+                // Prevent spamming? 
+                // The user said "Trigger... anytime". Usually this means "When it happens".
+                // If we trigger every frame, the handler (JokerEventHandler) re-re-re-re-restarts the round every frame.
+                // WE MUST LOCK IT.
+                if (!betManager.isSettlementLocked) 
+                {
+                    Debug.Log($"[Anytime Check] Hand Joker Detected! P:{playerHandHas} E:{enemyHandHas}");
+                    betManager.isSettlementLocked = true; // Lock to prevent multi-trigger
+                    onHandJokerRevealed?.Invoke(playerHandHas, enemyHandHas);
+                }
+            }
         }
 
         private void OnBettingRoundRestarted()
@@ -79,16 +110,21 @@ namespace BetSystem
         {
             if (cardDeckSystem == null) return;
 
-            // 1. Reveal Enemy Cards (Showdown always reveals all)
+            // 1. Reveal Enemy Cards
             RevealCardsInTransform(cardDeckSystem.enemyHandArea);
 
-            // 2. Check for Jokers (Showdown means everything is revealed, so we can check everything)
-            // Note: Since we just called RevealCardsInTransform, they are now "revealed".
-            bool jokerFound = CheckAndTriggerJokerLogic(stopShowdownIfJokerFound);
+            // 2. Check for Public Joker (Win Judgment Trigger)
+            bool publicJokerFound = HasRevealedJoker(cardDeckSystem.PublicCardObjects);
             
-            if (jokerFound && stopShowdownIfJokerFound)
+            if (publicJokerFound)
             {
-                return; // Stop standard Judge
+                Debug.Log("[Showdown] Public Joker Found! Triggering Event.");
+                if (stopShowdownIfJokerFound)
+                {
+                    betManager.isSettlementLocked = true; 
+                    onPublicJokerRevealed?.Invoke();
+                    return; // Stop standard Judge
+                }
             }
 
             // 3. Collect cards for Judge
@@ -115,53 +151,6 @@ namespace BetSystem
                 if (playerWins) betManager.PlayerWin();
                 else betManager.EnemyWin();
             }
-        }
-
-        /// <summary>
-        /// Checks all cards in play. Returns true if a REVEALED Joker is found.
-        /// If found and shouldLock is true, locks the BetManager settlement.
-        /// </summary>
-        private bool CheckAndTriggerJokerLogic(bool shouldLock)
-        {
-            if (cardDeckSystem == null) return false;
-
-            bool playerHasRevealedJoker = HasRevealedJoker(cardDeckSystem.playerCardObjects);
-            bool publicHasRevealedJoker = HasRevealedJoker(cardDeckSystem.PublicCardObjects);
-            bool enemyHasRevealedJoker = HasRevealedJoker(cardDeckSystem.enemyCardObjects); // Uses list directly if available, or helper
-
-            // Note: enemyCardObjects logic in CardDeckSystem might not be exposed as a public list if private. 
-            // In CardDeckSystem.cs it is private List<GameObject> enemyCardObjects. 
-            // But we can get them via Transform if needed.
-            if (cardDeckSystem.enemyHandArea != null)
-            {
-                 // Re-check via transform to be safe if list is private/empty
-                 enemyHasRevealedJoker = HasRevealedJokerInTransform(cardDeckSystem.enemyHandArea);
-            }
-
-            // Determine ownership for the event
-            // Public Joker counts for... both? or triggers event with true, true? 
-            // Usually Joker ownership matters. If Public has it, both "have" it in a sense.
-            // Let's pass: 
-            // PlayerParam = PlayerHandHas OR PublicHas
-            // EnemyParam = EnemyHandHas OR PublicHas
-            
-            bool pEvent = playerHasRevealedJoker || publicHasRevealedJoker;
-            bool eEvent = enemyHasRevealedJoker || publicHasRevealedJoker;
-
-            if (pEvent || eEvent)
-            {
-                Debug.Log($"Revealed Joker Detected! P:{pEvent}, E:{eEvent}");
-                
-                if (shouldLock)
-                {
-                    betManager.isSettlementLocked = true;
-                }
-                
-                onJokerDetected?.Invoke(pEvent, eEvent);
-                return true;
-            }
-
-            return false;
         }
 
         private bool HasRevealedJoker(List<GameObject> cards)
