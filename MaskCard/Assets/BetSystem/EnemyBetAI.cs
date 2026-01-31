@@ -162,7 +162,10 @@ namespace BetSystem
             List<GameObject> PublicCardFlip = new List<GameObject>();
             foreach (var item in cardDeckSystem.PublicCardObjects)
             {
-                if (item.GetComponent<CardFaceController>()?._isShowingBack != false)
+                // Fix: Should collect Reveal Cards (Not Showing Back)
+                // Originally: _isShowingBack != false (which means true/Hidden)
+                // Correct: _isShowingBack == false (Showing Front)
+                if (item.GetComponent<CardFaceController>()?._isShowingBack == false)
                 {
                     PublicCardFlip.Add(item);
                 }

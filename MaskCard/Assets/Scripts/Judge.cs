@@ -12,49 +12,49 @@ public enum behaviorType
 }
 
 /// <summary>
-/// ÅÆĞÍ
+/// ç‰Œå‹
 /// </summary>
 public enum PokerHandType
 {
     /// <summary>
-    /// »Ê¼ÒÍ¬»¨Ë³
+    /// çš‡å®¶åŒèŠ±é¡º
     /// </summary>
     RoyalFlush = 9,
     /// <summary>
-    /// Í¬»¨Ë³
+    /// åŒèŠ±é¡º
     /// </summary>
     StraightFlush = 8,
     /// <summary>
-    /// ËÄÌõ
+    /// å››æ¡
     /// </summary>
     FourOfAKind = 7,
     /// <summary>
-    /// ºùÂ«
-    /// ·ÖÊıÎªÈıÕÅµÄ*100+¶ÔµÄ
+    /// è‘«èŠ¦
+    /// åˆ†æ•°ä¸ºä¸‰å¼ çš„*100+å¯¹çš„
     /// </summary>
     FullHouse = 6,
     /// <summary>
-    /// Í¬»¨
+    /// åŒèŠ±
     /// </summary>
     Flush = 5,
     /// <summary>
-    /// Ë³×Ó
+    /// é¡ºå­
     /// </summary>
     Straight = 4,
     /// <summary>
-    /// ÈıÌõ
+    /// ä¸‰æ¡
     /// </summary>
     ThreeOfAKind = 3,
     /// <summary>
-    /// Á½¶Ô
+    /// ä¸¤å¯¹
     /// </summary>
     TwoPair = 2,
     /// <summary>
-    /// Ò»¶Ô
+    /// ä¸€å¯¹
     /// </summary>
     OnePair = 1,
     /// <summary>
-    /// ¸ßÅÆ
+    /// é«˜ç‰Œ
     /// </summary>
     HighCard = 0
 }
@@ -81,14 +81,14 @@ public class Judge
 
 
     /// <summary>
-    /// ¸ù¾İÊÖÅÆÁĞ±í£¬·µ»Ø×î¼ÑÊÖÅÆºÍÊÖÅÆÀàĞÍ
+    /// æ ¹æ®æ‰‹ç‰Œåˆ—è¡¨ï¼Œè¿”å›æœ€ä½³æ‰‹ç‰Œå’Œæ‰‹ç‰Œç±»å‹
     /// </summary>
-    /// <param name="myCards">ÎÒµÄÊÖÅÆ+¹«ÅÆ</param>
-    /// <param name="enemyCards">µĞÈËµÄÊÖÅÆ+¹«ÅÆ</param>
-    /// <param name="myHandCards">½áËã³öµÄÎÒµÄ×î¼ÑÊÖÅÆ</param>
-    /// <param name="myHandsType">½áËã³öµÄÎÒµÄÊÖÅÆµÄÀàĞÍ</param>
-    /// <param name="enemyHandCards">½áËã³öµÄµĞÈËµÄ×î¼ÑÊÖÅÆ</param>
-    /// <param name="enemyHandsType">½áËã³öµÄµĞÈËµÄÊÖÅÆµÄÀàĞÍ</param>
+    /// <param name="myCards">æˆ‘çš„æ‰‹ç‰Œ+å…¬ç‰Œ</param>
+    /// <param name="enemyCards">æ•Œäººçš„æ‰‹ç‰Œ+å…¬ç‰Œ</param>
+    /// <param name="myHandCards">ç»“ç®—å‡ºçš„æˆ‘çš„æœ€ä½³æ‰‹ç‰Œ</param>
+    /// <param name="myHandsType">ç»“ç®—å‡ºçš„æˆ‘çš„æ‰‹ç‰Œçš„ç±»å‹</param>
+    /// <param name="enemyHandCards">ç»“ç®—å‡ºçš„æ•Œäººçš„æœ€ä½³æ‰‹ç‰Œ</param>
+    /// <param name="enemyHandsType">ç»“ç®—å‡ºçš„æ•Œäººçš„æ‰‹ç‰Œçš„ç±»å‹</param>
     public void GetResult(List<PlayingCard> myCards, List<PlayingCard> enemyCards, out List<PlayingCard> myHandCards, out PokerHandType myHandsType, out List<PlayingCard> enemyHandCards, out PokerHandType enemyHandsType, out bool win)
     {
         win = false;
@@ -100,19 +100,19 @@ public class Judge
     }
 
     /// <summary>
-    /// ÆÀ¹À²¢·µ»Ø×îÇ¿µÄÅÆĞÍ×éºÏ
+    /// è¯„ä¼°å¹¶è¿”å›æœ€å¼ºçš„ç‰Œå‹ç»„åˆ
     /// </summary>
-    /// <param name="cards">ÊäÈëµÄÅÆ¼¯ºÏ</param>
-    /// <returns>°üº¬×îÇ¿ÅÆĞÍºÍ¶ÔÓ¦ÅÆµÄÁĞ±í</returns>
+    /// <param name="cards">è¾“å…¥çš„ç‰Œé›†åˆ</param>
+    /// <returns>åŒ…å«æœ€å¼ºç‰Œå‹å’Œå¯¹åº”ç‰Œçš„åˆ—è¡¨</returns>
     public List<PlayingCard> GetBestCard(List<PlayingCard> cards)
     {
         if (cards == null || cards.Count < 5)
-            return null; // ÖÁÉÙĞèÒª5ÕÅÅÆ
+            return null; // è‡³å°‘éœ€è¦5å¼ ç‰Œ
 
-        // °´½µĞòÅÅÁĞÅÆ
+        // æŒ‰é™åºæ’åˆ—ç‰Œ
         List<PlayingCard> sortedCards = cards.OrderByDescending(c => c.rank).ToList();
 
-        // ¼ì²éËùÓĞ¿ÉÄÜµÄ5ÕÅÅÆ×éºÏ£¬ÕÒ³ö×îÇ¿µÄ
+        // æ£€æŸ¥æ‰€æœ‰å¯èƒ½çš„5å¼ ç‰Œç»„åˆï¼Œæ‰¾å‡ºæœ€å¼ºçš„
         var allCombinations = GetCombinations(sortedCards, 5);
         PokerHandResult bestResult = null;
 
@@ -129,7 +129,7 @@ public class Judge
     }
 
     /// <summary>
-    /// ÆÀ¹Àµ¥ÊÖ5ÕÅÅÆµÄ×éºÏ
+    /// è¯„ä¼°å•æ‰‹5å¼ ç‰Œçš„ç»„åˆ
     /// </summary>
     private PokerHandResult EvaluateSingleHand(List<PlayingCard> cards)
     {
@@ -142,7 +142,7 @@ public class Judge
         var ranks = cards.Select(c => c.rank).Distinct().OrderBy(r => r).ToList();
 
 
-        bool isFlush = suits.Distinct().Count() == 1; // ÅĞ¶ÏÊÇ·ñÍ¬»¨
+        bool isFlush = suits.Distinct().Count() == 1; // åˆ¤æ–­æ˜¯å¦åŒèŠ±
         bool isStraight = IsStraight(ranks);
 
 
@@ -154,7 +154,7 @@ public class Judge
                 return new PokerHandResult(PokerHandType.StraightFlush, cards, (int)ranks.Max());
         }
 
-        if (rankGroups[0].Count() == 4) // ËÄÌõ
+        if (rankGroups[0].Count() == 4) // å››æ¡
         {
             int fourRank = (int)rankGroups[0].Key;
             var kickers = cards.Where(c => (int)c.rank != fourRank).OrderByDescending(c => c.rank).Take(1).ToList();
@@ -162,7 +162,7 @@ public class Judge
             return new PokerHandResult(PokerHandType.FourOfAKind, resultCards, fourRank * 10 + (int)resultCards[4].rank);
         }
 
-        if (rankGroups[0].Count() == 3 && rankGroups.Count >= 2 && rankGroups[1].Count() == 2) // ºùÂ«
+        if (rankGroups[0].Count() == 3 && rankGroups.Count >= 2 && rankGroups[1].Count() == 2) // è‘«èŠ¦
         {
             int threeRank = (int)rankGroups[0].Key;
             int pairRank = (int)rankGroups[1].Key;
@@ -170,20 +170,20 @@ public class Judge
             return new PokerHandResult(PokerHandType.FullHouse, resultCards, threeRank * 1000 + pairRank * 10 + (int)resultCards[4].rank);
         }
 
-        if (isFlush) // Í¬»¨
+        if (isFlush) // åŒèŠ±
         {
             var flusCards = cards.OrderByDescending(c => c.rank).Take(5).ToList();
             return new PokerHandResult(PokerHandType.Flush, flusCards, (int)flusCards.First().rank * 10000 + (int)flusCards[1].rank * 1000 + (int)flusCards[2].rank * 100 + (int)flusCards[3].rank * 10 + (int)flusCards[4].rank);
         }
 
-        if (isStraight) // Ë³×Ó
+        if (isStraight) // é¡ºå­
         {
-            var straightCards = sortedByRank.Take(5).ToList(); // ¼ò»¯´¦Àí
+            var straightCards = sortedByRank.Take(5).ToList(); // ç®€åŒ–å¤„ç†
             int highestRank = (int)ranks.Max();
             return new PokerHandResult(PokerHandType.Straight, straightCards, highestRank);
         }
 
-        if (rankGroups[0].Count() == 3) // ÈıÌõ
+        if (rankGroups[0].Count() == 3) // ä¸‰æ¡
         {
             int threeRank = (int)rankGroups[0].Key;
             var kickers = cards.Where(c => (int)c.rank != threeRank).OrderByDescending(c => c.rank).Take(2).ToList();
@@ -191,7 +191,7 @@ public class Judge
             return new PokerHandResult(PokerHandType.ThreeOfAKind, resultCards, threeRank * 10 + (int)resultCards[3].rank);
         }
 
-        if (rankGroups[0].Count() == 2 && rankGroups.Count >= 2 && rankGroups[1].Count() == 2) // Á½¶Ô
+        if (rankGroups[0].Count() == 2 && rankGroups.Count >= 2 && rankGroups[1].Count() == 2) // ä¸¤å¯¹
         {
             int firstPairRank = (int)rankGroups[0].Key;
             int secondPairRank = (int)rankGroups[1].Key;
@@ -201,7 +201,7 @@ public class Judge
             return new PokerHandResult(PokerHandType.TwoPair, resultCards, (int)firstPairRank * 100 + (int)secondPairRank * 10 + (int)kicker.rank);
         }
 
-        if (rankGroups[0].Count() == 2) // Ò»¶Ô
+        if (rankGroups[0].Count() == 2) // ä¸€å¯¹
         {
             int pairRank = (int)rankGroups[0].Key;
             var kickers = cards.Where(c => (int)c.rank != pairRank).OrderByDescending(c => c.rank).Take(3).ToList();
@@ -209,13 +209,13 @@ public class Judge
             return new PokerHandResult(PokerHandType.OnePair, resultCards, pairRank);
         }
 
-        // ¸ßÅÆ
+        // é«˜ç‰Œ
         var highCards = cards.OrderByDescending(c => c.rank).Take(5).ToList();
         return new PokerHandResult(PokerHandType.HighCard, highCards, (int)highCards.First().rank);
     }
 
     /// <summary>
-    /// ÅĞ¶ÏÊÇ·ñÎªË³×Ó
+    /// åˆ¤æ–­æ˜¯å¦ä¸ºé¡ºå­
     /// </summary>
     private bool IsStraight(List<CardRank> ranks)
     {
@@ -230,7 +230,7 @@ public class Judge
     }
 
     /// <summary>
-    /// Éú³É×éºÏ
+    /// ç”Ÿæˆç»„åˆ
     /// </summary>
     private IEnumerable<List<T>> GetCombinations<T>(List<T> list, int length)
     {
@@ -250,29 +250,29 @@ public class Judge
     }
 
     /// <summary>
-    /// ±È½ÏÁ½¸öÊÖÅÆÄÄ¸ö¸üÇ¿
+    /// æ¯”è¾ƒä¸¤ä¸ªæ‰‹ç‰Œå“ªä¸ªæ›´å¼º
     /// </summary>
     private bool IsBetterHand(PokerHandResult hand1, PokerHandResult hand2)
     {
         if ((int)hand1.HandType != (int)hand2.HandType)
             return (int)hand1.HandType >= (int)hand2.HandType;
 
-        // ÏàÍ¬ÀàĞÍ±È½Ï·ÖÊı
+        // ç›¸åŒç±»å‹æ¯”è¾ƒåˆ†æ•°
         return hand1.Score >= hand2.Score;
     }
 
     /// <summary>
-    /// »ñÈ¡ÊÖÅÆÀàĞÍ
+    /// è·å–æ‰‹ç‰Œç±»å‹
     /// </summary>
     public PokerHandType GetHandType(List<PlayingCard> cards)
     {
         if (cards == null || cards.Count < 5)
             return PokerHandType.HighCard;
 
-        // °´½µĞòÅÅÁĞÅÆ
+        // æŒ‰é™åºæ’åˆ—ç‰Œ
         var sortedCards = cards.OrderByDescending(c => c.rank).ToList();
 
-        // ¼ì²éËùÓĞ¿ÉÄÜµÄ5ÕÅÅÆ×éºÏ£¬ÕÒ³ö×îÇ¿µÄ
+        // æ£€æŸ¥æ‰€æœ‰å¯èƒ½çš„5å¼ ç‰Œç»„åˆï¼Œæ‰¾å‡ºæœ€å¼ºçš„
         var allCombinations = GetCombinations(sortedCards, 5);
         PokerHandResult bestResult = null;
 
@@ -289,7 +289,7 @@ public class Judge
     }
 
     /// <summary>
-    /// ±È½ÏÁ½ÊÖÅÆµÄÇ¿Èõ
+    /// æ¯”è¾ƒä¸¤æ‰‹ç‰Œçš„å¼ºå¼±
     /// </summary>
     public int CompareHands(List<PlayingCard> hand1, List<PlayingCard> hand2)
     {
@@ -303,17 +303,17 @@ public class Judge
     }
 
     /// <summary>
-    /// ÆÀ¹À×î¼ÑÊÖÅÆ£¨·µ»ØÍêÕû½á¹û£©
+    /// è¯„ä¼°æœ€ä½³æ‰‹ç‰Œï¼ˆè¿”å›å®Œæ•´ç»“æœï¼‰
     /// </summary>
     private PokerHandResult EvaluateBestHand(List<PlayingCard> cards)
     {
         if (cards == null || cards.Count < 5)
             return new PokerHandResult(PokerHandType.HighCard, cards, 0);
 
-        // °´½µĞòÅÅÁĞÅÆ
+        // æŒ‰é™åºæ’åˆ—ç‰Œ
         var sortedCards = cards.OrderByDescending(c => c.rank).ToList();
 
-        // ¼ì²éËùÓĞ¿ÉÄÜµÄ5ÕÅÅÆ×éºÏ£¬ÕÒ³ö×îÇ¿µÄ
+        // æ£€æŸ¥æ‰€æœ‰å¯èƒ½çš„5å¼ ç‰Œç»„åˆï¼Œæ‰¾å‡ºæœ€å¼ºçš„
         var allCombinations = GetCombinations(sortedCards, 5);
         PokerHandResult bestResult = null;
 
@@ -354,16 +354,16 @@ public class Judge
         {
             behavior = behaviorType.fold;
         }
-        Debug.Log($"±¾»ØºÏAIÂß¼­ÊÇ£º{behavior.ToString()}");
+        Debug.Log($"æœ¬å›åˆAIé€»è¾‘æ˜¯ï¼š{behavior.ToString()}");
         return behavior;
     }
     /// <summary>
-    /// ÆÀ¹ÀÏÖÓĞµÄÅÆ×éÏÂµçÄÔµÄĞĞÎª¸ÅÂÊ
+    /// è¯„ä¼°ç°æœ‰çš„ç‰Œç»„ä¸‹ç”µè„‘çš„è¡Œä¸ºæ¦‚ç‡
     /// </summary>
-    /// <param name="enemyCards">°üÀ¨ÊÖÅÆºÍÒÑ·­¿ªµÄ¹«ÅÆ</param>
-    /// <param name="raiseRate">¼Ó×¢µÄ¸ÅÂÊ</param>
-    /// <param name="callRate">¸ú×¢µÄ¸ÅÂÊ</param>
-    /// <param name="foldRate">ÆúÅÆµÄ¸ÅÂÊ</param>
+    /// <param name="enemyCards">åŒ…æ‹¬æ‰‹ç‰Œå’Œå·²ç¿»å¼€çš„å…¬ç‰Œ</param>
+    /// <param name="raiseRate">åŠ æ³¨çš„æ¦‚ç‡</param>
+    /// <param name="callRate">è·Ÿæ³¨çš„æ¦‚ç‡</param>
+    /// <param name="foldRate">å¼ƒç‰Œçš„æ¦‚ç‡</param>
     public void GetRateNow(List<PlayingCard> enemyCards, out float raiseRate, out float callRate, out float foldRate)
     {
 
@@ -373,7 +373,7 @@ public class Judge
 
         if (enemyCards == null || enemyCards.Count == 0)
         {
-            // Èç¹ûÃ»ÓĞÅÆ£¬Ä¬ÈÏÎª¸ßÅÆÇÒ±£ÊØ²ßÂÔ
+            // å¦‚æœæ²¡æœ‰ç‰Œï¼Œé»˜è®¤ä¸ºé«˜ç‰Œä¸”ä¿å®ˆç­–ç•¥
             var data = aiBehaviorDataDict.ContainsKey(PokerHandType.HighCard) ?
                       aiBehaviorDataDict[PokerHandType.HighCard] :
                       new AIBehaviorData { LessThanFiveRaiseRate = 0.05f, LessThanFiveCallRate = 0.9f, LessThanFiveFoldRate = 0.05f };
@@ -383,14 +383,14 @@ public class Judge
             return;
         }
 
-        // »ñÈ¡µ±Ç°ÅÆĞÍ
+        // è·å–å½“å‰ç‰Œå‹
         PokerHandType handType = GetHandTypeAdvanced(enemyCards);
-        // ¸ù¾İÊÖÅÆÊıÁ¿Ñ¡Ôñ¶ÔÓ¦µÄĞĞÎª¸ÅÂÊ
+        // æ ¹æ®æ‰‹ç‰Œæ•°é‡é€‰æ‹©å¯¹åº”çš„è¡Œä¸ºæ¦‚ç‡
         int cardCount = enemyCards.Count;
 
         if (cardCount < 5)
         {
-            // ÉÙÓÚ5ÕÅÅÆÊ±µÄ¸ÅÂÊ
+            // å°‘äº5å¼ ç‰Œæ—¶çš„æ¦‚ç‡
             if (aiBehaviorDataDict.ContainsKey(handType))
             {
                 var data = aiBehaviorDataDict[handType];
@@ -400,7 +400,7 @@ public class Judge
             }
             else
             {
-                // Èç¹ûÕÒ²»µ½¶ÔÓ¦ÅÆĞÍ£¬Ê¹ÓÃÄ¬ÈÏÖµ
+                // å¦‚æœæ‰¾ä¸åˆ°å¯¹åº”ç‰Œå‹ï¼Œä½¿ç”¨é»˜è®¤å€¼
                 var data = aiBehaviorDataDict.ContainsKey(PokerHandType.HighCard) ?
                           aiBehaviorDataDict[PokerHandType.HighCard] :
                           new AIBehaviorData { LessThanFiveRaiseRate = 0.05f, LessThanFiveCallRate = 0.9f, LessThanFiveFoldRate = 0.05f };
@@ -411,7 +411,7 @@ public class Judge
         }
         else
         {
-            // 5ÕÅ»ò¸ü¶àÅÆÊ±Ê¹ÓÃ5ÕÅÅÆµÄ¸ÅÂÊ
+            // 5å¼ æˆ–æ›´å¤šç‰Œæ—¶ä½¿ç”¨5å¼ ç‰Œçš„æ¦‚ç‡
             if (aiBehaviorDataDict.ContainsKey(handType))
             {
                 var data = aiBehaviorDataDict[handType];
@@ -421,7 +421,7 @@ public class Judge
             }
             else
             {
-                // Èç¹ûÕÒ²»µ½¶ÔÓ¦ÅÆĞÍ£¬Ê¹ÓÃÄ¬ÈÏÖµ
+                // å¦‚æœæ‰¾ä¸åˆ°å¯¹åº”ç‰Œå‹ï¼Œä½¿ç”¨é»˜è®¤å€¼
                 var data = aiBehaviorDataDict.ContainsKey(PokerHandType.HighCard) ?
                           aiBehaviorDataDict[PokerHandType.HighCard] :
                           new AIBehaviorData { EqualFiveRaiseRate = 0.05f, EqualFiveCallRate = 0.3f, EqualFiveFoldRate = 0.65f };
@@ -431,7 +431,7 @@ public class Judge
             }
         }
 
-        // È·±£¸ÅÂÊºÍÎª1
+        // ç¡®ä¿æ¦‚ç‡å’Œä¸º1
         float total = raiseRate + callRate + foldRate;
         if (total > 0)
         {
@@ -439,40 +439,40 @@ public class Judge
             callRate /= total;
             foldRate /= total;
         }
-        Debug.Log("±¾»ØºÏµÄÅÆĞÍÎª£º" + handType.ToString() + " ¼Ó×¢±¶ÂÊ:" + raiseRate + " ¸ù×¢±¶ÂÊ:" + callRate + " ÆúÅÆ±¶ÂÊ:" + foldRate);
+        Debug.Log("æœ¬å›åˆçš„ç‰Œå‹ä¸ºï¼š" + handType.ToString() + " åŠ æ³¨å€ç‡:" + raiseRate + " æ ¹æ³¨å€ç‡:" + callRate + " å¼ƒç‰Œå€ç‡:" + foldRate);
 
     }
 
     /// <summary>
-    /// AIÂß¼­ÅĞ¶Ï£¬ÓĞ¿ÉÄÜ²»×ã5ÕÅÅÆÒ²ÄÜÅĞ¶ÏÇ±ÔÚÅÆĞÍ
+    /// AIé€»è¾‘åˆ¤æ–­ï¼Œæœ‰å¯èƒ½ä¸è¶³5å¼ ç‰Œä¹Ÿèƒ½åˆ¤æ–­æ½œåœ¨ç‰Œå‹
     /// </summary>
     private PokerHandType GetHandTypeAdvanced(List<PlayingCard> cards)
     {
         if (cards == null || cards.Count == 0)
             return PokerHandType.HighCard;
 
-        // °´½µĞòÅÅÁĞÅÆ
+        // æŒ‰é™åºæ’åˆ—ç‰Œ
         var sortedCards = cards.OrderByDescending(c => c.rank).ToList();
 
-        // ·ÖÎöÅÆµÄÌØÕ÷
+        // åˆ†æç‰Œçš„ç‰¹å¾
         var rankGroups = cards.GroupBy(c => c.rank)
                              .OrderByDescending(g => g.Count())
                              .ToList();
         var suits = cards.Select(c => c.suit).ToList();
         var ranks = cards.Select(c => (int)c.rank).Distinct().OrderBy(r => r).ToList();
 
-        // Í³¼Æ¸÷ÅÆµÄÊıÁ¿
+        // ç»Ÿè®¡å„ç‰Œçš„æ•°é‡
         int pairs = rankGroups.Count(g => g.Count() == 2);
         int threeOfAKind = rankGroups.Count(g => g.Count() == 3);
         int fourOfAKind = rankGroups.Count(g => g.Count() == 4);
 
-        // ÅĞ¶ÏÊÇ·ñÎªÍ¬»¨
-        bool isPotentialFlush = suits.GroupBy(s => s).Any(g => g.Count() >= 3); // ÖÁÉÙ3ÕÅÍ¬»¨É«
+        // åˆ¤æ–­æ˜¯å¦ä¸ºåŒèŠ±
+        bool isPotentialFlush = suits.GroupBy(s => s).Any(g => g.Count() >= 3); // è‡³å°‘3å¼ åŒèŠ±è‰²
 
-        // ÅĞ¶ÏÊÇ·ñÎªË³×ÓÇ±Á¦
+        // åˆ¤æ–­æ˜¯å¦ä¸ºé¡ºå­æ½œåŠ›
         bool isPotentialStraight = CheckPotentialStraight(ranks);
 
-        // ¸ù¾İÅÆµÄÌØÕ÷ÅĞ¶Ï×îÇ¿µÄÇ±ÔÚÅÆĞÍ
+        // æ ¹æ®ç‰Œçš„ç‰¹å¾åˆ¤æ–­æœ€å¼ºçš„æ½œåœ¨ç‰Œå‹
         if (fourOfAKind > 0)
             return PokerHandType.FourOfAKind;
         else if (threeOfAKind > 0 && pairs > 0)
@@ -480,7 +480,7 @@ public class Judge
         else if (threeOfAKind > 0 && cards.Count == 4)
             return PokerHandType.FullHouse;
         //else if (isPotentialFlush && isPotentialStraight)
-        //    return PokerHandType.StraightFlush; // ¼ò»¯´¦Àí
+        //    return PokerHandType.StraightFlush; // ç®€åŒ–å¤„ç†
         else if (threeOfAKind > 0 && cards.Count == 4)
             return PokerHandType.ThreeOfAKind;
         else if (pairs >= 2)
@@ -496,13 +496,13 @@ public class Judge
     }
 
     /// <summary>
-    /// ¼ì²éÊÇ·ñÓĞË³×ÓÇ±Á¦
+    /// æ£€æŸ¥æ˜¯å¦æœ‰é¡ºå­æ½œåŠ›
     /// </summary>
     private bool CheckPotentialStraight(List<int> ranks)
     {
-        if (ranks.Count < 3) return false; // ÖÁÉÙĞèÒª3ÕÅÅÆ²Å¿ÉÄÜĞÎ³ÉË³×Ó
+        if (ranks.Count < 3) return false; // è‡³å°‘éœ€è¦3å¼ ç‰Œæ‰å¯èƒ½å½¢æˆé¡ºå­
 
-        // ¼ì²éÊÇ·ñ¿ÉÒÔÍ¨¹ıÌí¼ÓÅÆĞÎ³ÉË³×Ó
+        // æ£€æŸ¥æ˜¯å¦å¯ä»¥é€šè¿‡æ·»åŠ ç‰Œå½¢æˆé¡ºå­
         int consecutiveCount = 1;
         int gaps = 0;
 
@@ -514,24 +514,24 @@ public class Judge
             }
             else if (ranks[i] == ranks[i - 1])
             {
-                // ÏàÍ¬ÅÆ£¬Ìø¹ı
+                // ç›¸åŒç‰Œï¼Œè·³è¿‡
                 continue;
             }
             else
             {
-                // ¼ÆËã¼ä¸ô
+                // è®¡ç®—é—´éš”
                 gaps += ranks[i] - ranks[i - 1] - 1;
             }
         }
 
-        // Èç¹ûÁ¬ĞøÅÆÊı¼ÓÉÏ¼äÏ¶ÊıÄÜ´ïµ½Ë³×ÓÒªÇó£¬ÔòÈÏÎªÓĞË³×ÓÇ±Á¦
-        return consecutiveCount + gaps >= 4; // 4ÕÅÁ¬ĞøµÄÅÆÓĞĞÎ³É5ÕÅË³×ÓµÄÇ±Á¦
+        // å¦‚æœè¿ç»­ç‰Œæ•°åŠ ä¸Šé—´éš™æ•°èƒ½è¾¾åˆ°é¡ºå­è¦æ±‚ï¼Œåˆ™è®¤ä¸ºæœ‰é¡ºå­æ½œåŠ›
+        return consecutiveCount + gaps >= 4; // 4å¼ è¿ç»­çš„ç‰Œæœ‰å½¢æˆ5å¼ é¡ºå­çš„æ½œåŠ›
     }
-    // »º´æAIĞĞÎªÊı¾İ
+    // ç¼“å­˜AIè¡Œä¸ºæ•°æ®
     private Dictionary<PokerHandType, AIBehaviorData> aiBehaviorDataDict;
 
     /// <summary>
-    /// ³õÊ¼»¯AIĞĞÎªÊı¾İ
+    /// åˆå§‹åŒ–AIè¡Œä¸ºæ•°æ®
     /// </summary>
     private void InitializeAIData()
     {
@@ -539,36 +539,36 @@ public class Judge
 
         aiBehaviorDataDict = new Dictionary<PokerHandType, AIBehaviorData>();
 
-        // ¼ÓÔØCSVÎÄ¼ş
-        TextAsset csvText = Resources.Load<TextAsset>("µĞÈËai±í");
+        // åŠ è½½CSVæ–‡ä»¶
+        TextAsset csvText = Resources.Load<TextAsset>("æ•Œäººaiè¡¨");
         if (csvText != null)
         {
             ParseCSV(csvText.text);
         }
         else
         {
-            Debug.LogError("ÕÒ²»µ½×ÊÔ´ÎÄ¼ş: Resources/µĞÈËai±í.csv");
-            // Ê¹ÓÃÄ¬ÈÏÖµ³õÊ¼»¯
+            Debug.LogError("æ‰¾ä¸åˆ°èµ„æºæ–‡ä»¶: Resources/æ•Œäººaiè¡¨.csv");
+            // ä½¿ç”¨é»˜è®¤å€¼åˆå§‹åŒ–
             SetDefaultValues();
         }
     }
 
 
     /// <summary>
-    /// ½âÎöCSVÎÄ¼ş
+    /// è§£æCSVæ–‡ä»¶
     /// </summary>
     private void ParseCSV(string csvText)
     {
         string[] lines = csvText.Split('\n');
 
-        // Ìø¹ı±êÌâĞĞ
+        // è·³è¿‡æ ‡é¢˜è¡Œ
         for (int i = 1; i < lines.Length; i++)
         {
             string line = lines[i].Trim();
             if (string.IsNullOrEmpty(line)) continue;
 
             string[] values = line.Split(',');
-            if (values.Length < 7) continue; // È·±£ÓĞ×ã¹»µÄÁĞ
+            if (values.Length < 7) continue; // ç¡®ä¿æœ‰è¶³å¤Ÿçš„åˆ—
 
             try
             {
@@ -589,29 +589,29 @@ public class Judge
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"½âÎöCSVĞĞ{i}Ê±³ö´í: {e.Message}, ĞĞÄÚÈİ: {line}");
+                Debug.LogError($"è§£æCSVè¡Œ{i}æ—¶å‡ºé”™: {e.Message}, è¡Œå†…å®¹: {line}");
             }
         }
     }
 
     /// <summary>
-    /// ÉèÖÃÄ¬ÈÏÖµ
+    /// è®¾ç½®é»˜è®¤å€¼
     /// </summary>
     private void SetDefaultValues()
     {
-        // Ä¬ÈÏÖµ£ºµ±ÕÒ²»µ½CSVÎÄ¼şÊ±Ê¹ÓÃ
+        // é»˜è®¤å€¼ï¼šå½“æ‰¾ä¸åˆ°CSVæ–‡ä»¶æ—¶ä½¿ç”¨
         var defaultData = new[]
         {
-            new AIBehaviorData { HandType = PokerHandType.HighCard, LessThanFiveRaiseRate = 0.05f, LessThanFiveCallRate = 0.9f, LessThanFiveFoldRate = 0.05f, EqualFiveRaiseRate = 0.05f, EqualFiveCallRate = 0.3f, EqualFiveFoldRate = 0.65f },
-            new AIBehaviorData { HandType = PokerHandType.OnePair, LessThanFiveRaiseRate = 0.7f, LessThanFiveCallRate = 0.25f, LessThanFiveFoldRate = 0.05f, EqualFiveRaiseRate = 0.2f, EqualFiveCallRate = 0.5f, EqualFiveFoldRate = 0.3f },
-            new AIBehaviorData { HandType = PokerHandType.TwoPair, LessThanFiveRaiseRate = 0.8f, LessThanFiveCallRate = 0.15f, LessThanFiveFoldRate = 0.05f, EqualFiveRaiseRate = 0.4f, EqualFiveCallRate = 0.4f, EqualFiveFoldRate = 0.2f },
-            new AIBehaviorData { HandType = PokerHandType.ThreeOfAKind, LessThanFiveRaiseRate = 0.85f, LessThanFiveCallRate = 0.1f, LessThanFiveFoldRate = 0.05f, EqualFiveRaiseRate = 0.6f, EqualFiveCallRate = 0.3f, EqualFiveFoldRate = 0.1f },
-            new AIBehaviorData { HandType = PokerHandType.Straight, LessThanFiveRaiseRate = 0.9f, LessThanFiveCallRate = 0.08f, LessThanFiveFoldRate = 0.02f, EqualFiveRaiseRate = 0.7f, EqualFiveCallRate = 0.2f, EqualFiveFoldRate = 0.1f },
-            new AIBehaviorData { HandType = PokerHandType.Flush, LessThanFiveRaiseRate = 0.9f, LessThanFiveCallRate = 0.08f, LessThanFiveFoldRate = 0.02f, EqualFiveRaiseRate = 0.7f, EqualFiveCallRate = 0.2f, EqualFiveFoldRate = 0.1f },
-            new AIBehaviorData { HandType = PokerHandType.FullHouse, LessThanFiveRaiseRate = 0.95f, LessThanFiveCallRate = 0.04f, LessThanFiveFoldRate = 0.01f, EqualFiveRaiseRate = 0.8f, EqualFiveCallRate = 0.15f, EqualFiveFoldRate = 0.05f },
-            new AIBehaviorData { HandType = PokerHandType.FourOfAKind, LessThanFiveRaiseRate = 0.98f, LessThanFiveCallRate = 0.01f, LessThanFiveFoldRate = 0.01f, EqualFiveRaiseRate = 0.9f, EqualFiveCallRate = 0.08f, EqualFiveFoldRate = 0.02f },
-            new AIBehaviorData { HandType = PokerHandType.StraightFlush, LessThanFiveRaiseRate = 0.99f, LessThanFiveCallRate = 0.005f, LessThanFiveFoldRate = 0.005f, EqualFiveRaiseRate = 0.95f, EqualFiveCallRate = 0.04f, EqualFiveFoldRate = 0.01f },
-            new AIBehaviorData { HandType = PokerHandType.RoyalFlush, LessThanFiveRaiseRate = 1.0f, LessThanFiveCallRate = 0.0f, LessThanFiveFoldRate = 0.0f, EqualFiveRaiseRate = 1.0f, EqualFiveCallRate = 0.0f, EqualFiveFoldRate = 0.0f }
+            new AIBehaviorData { HandType = PokerHandType.HighCard, LessThanFiveRaiseRate = 0.05f, LessThanFiveCallRate = 0.95f, LessThanFiveFoldRate = 0f, EqualFiveRaiseRate = 0.05f, EqualFiveCallRate = 0.3f, EqualFiveFoldRate = 0.65f },
+            new AIBehaviorData { HandType = PokerHandType.OnePair, LessThanFiveRaiseRate = 0.7f, LessThanFiveCallRate = 0.3f, LessThanFiveFoldRate = 0f, EqualFiveRaiseRate = 0.2f, EqualFiveCallRate = 0.5f, EqualFiveFoldRate = 0.3f },
+            new AIBehaviorData { HandType = PokerHandType.TwoPair, LessThanFiveRaiseRate = 0.8f, LessThanFiveCallRate = 0.2f, LessThanFiveFoldRate = 0f, EqualFiveRaiseRate = 0.4f, EqualFiveCallRate = 0.4f, EqualFiveFoldRate = 0.2f },
+            new AIBehaviorData { HandType = PokerHandType.ThreeOfAKind, LessThanFiveRaiseRate = 0.85f, LessThanFiveCallRate = 0.15f, LessThanFiveFoldRate = 0f, EqualFiveRaiseRate = 0.6f, EqualFiveCallRate = 0.3f, EqualFiveFoldRate = 0.1f },
+            new AIBehaviorData { HandType = PokerHandType.Straight, LessThanFiveRaiseRate = 0.9f, LessThanFiveCallRate = 0.1f, LessThanFiveFoldRate = 0f, EqualFiveRaiseRate = 0.7f, EqualFiveCallRate = 0.2f, EqualFiveFoldRate = 0.1f },
+            new AIBehaviorData { HandType = PokerHandType.Flush, LessThanFiveRaiseRate = 0.9f, LessThanFiveCallRate = 0.1f, LessThanFiveFoldRate = 0f, EqualFiveRaiseRate = 0.7f, EqualFiveCallRate = 0.2f, EqualFiveFoldRate = 0.1f },
+            new AIBehaviorData { HandType = PokerHandType.FullHouse, LessThanFiveRaiseRate = 0.95f, LessThanFiveCallRate = 0.05f, LessThanFiveFoldRate = 0f, EqualFiveRaiseRate = 0.8f, EqualFiveCallRate = 0.15f, EqualFiveFoldRate = 0.05f },
+            new AIBehaviorData { HandType = PokerHandType.FourOfAKind, LessThanFiveRaiseRate = 0.98f, LessThanFiveCallRate = 0.02f, LessThanFiveFoldRate = 0f, EqualFiveRaiseRate = 0.9f, EqualFiveCallRate = 0.08f, EqualFiveFoldRate = 0.02f },
+            new AIBehaviorData { HandType = PokerHandType.StraightFlush, LessThanFiveRaiseRate = 0.99f, LessThanFiveCallRate = 0.01f, LessThanFiveFoldRate = 0f, EqualFiveRaiseRate = 0.95f, EqualFiveCallRate = 0.04f, EqualFiveFoldRate = 0.01f },
+            new AIBehaviorData { HandType = PokerHandType.RoyalFlush, LessThanFiveRaiseRate = 1.0f, LessThanFiveCallRate = 0.0f, LessThanFiveFoldRate = 0f, EqualFiveRaiseRate = 1.0f, EqualFiveCallRate = 0.0f, EqualFiveFoldRate = 0.0f }
         };
 
         foreach (var data in defaultData)
@@ -621,7 +621,7 @@ public class Judge
     }
 
     /// <summary>
-    /// ½âÎö¸¡µãÊı£¬´¦Àí¿ÕÖµÇé¿ö
+    /// è§£ææµ®ç‚¹æ•°ï¼Œå¤„ç†ç©ºå€¼æƒ…å†µ
     /// </summary>
     private float ParseFloat(string value)
     {
@@ -634,17 +634,17 @@ public class Judge
 }
 
 /// <summary>
-/// ÅÆĞÍÆÀ¹À½á¹ûÀà
-/// ÅÆĞÍ HandType¡¢ÅÆ×é Cards¡¢ÅÆĞÍÖµ Value
+/// ç‰Œå‹è¯„ä¼°ç»“æœç±»
+/// ç‰Œå‹ HandTypeã€ç‰Œç»„ Cardsã€ç‰Œå‹å€¼ Value
 /// </summary>
 public class PokerHandResult
 {
     public PokerHandType HandType { get; set; }
     public List<PlayingCard> Cards { get; set; }
-    public int Score { get; set; }  // ÓÃÓÚ±È½ÏÏàÍ¬ÀàĞÍÊÖÅÆµÄ´óĞ¡
+    public int Score { get; set; }  // ç”¨äºæ¯”è¾ƒç›¸åŒç±»å‹æ‰‹ç‰Œçš„å¤§å°
 
     /// <summary>
-    /// ´´½¨Ò»¸ö PokerHandResult ¶ÔÏó
+    /// åˆ›å»ºä¸€ä¸ª PokerHandResult å¯¹è±¡
     /// </summary>
     /// <param name="type"></param>
     /// <param name="cards"></param>
