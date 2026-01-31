@@ -48,8 +48,8 @@ public class SmoothParallaxMouseEffect : MonoBehaviour
         float normalizedMouseX = (mousePos.x - Screen.width / 2f) / (Screen.width / 2f);
 
         // 检查鼠标位置
-        bool isMouseOnLeftSide = normalizedMouseX < -0.4f;  // 鼠标在屏幕左侧20%范围内
-        bool isMouseOnRightSide = normalizedMouseX > 0.4f;  // 鼠标在屏幕右侧20%范围内
+        bool isMouseOnLeftSide = normalizedMouseX < -0.8f;  // 鼠标在屏幕左侧20%范围内
+        bool isMouseOnRightSide = normalizedMouseX > 0.8f;  // 鼠标在屏幕右侧20%范围内
 
         if (isMouseOnLeftSide)
         {
