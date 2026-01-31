@@ -339,19 +339,24 @@ public class Judge
         GetRateNow(Cards, out raiseRate, out foldRate, out dropRate);
         dropRate = 1 - raiseRate - foldRate;
 
+        Debug.Log("本回合的 加注倍率:" + raiseRate + " 根注倍率:" + foldRate + " 弃牌倍率:" + dropRate);
+
         float randomValue = Random.Range(0f, 1f);
+        behaviorType behavior = behaviorType.fold;
         if (randomValue < raiseRate)
         {
-            return behaviorType.raise;
+            behavior= behaviorType.raise;
         }
-        else if (randomValue < (raiseRate + dropRate))
+        else if (randomValue < (raiseRate + foldRate))
         {
-            return behaviorType.drop;
+            behavior= behaviorType.fold;
         }
         else
         {
-            return behaviorType.fold;
+            behavior= behaviorType.drop;
         }
+        Debug.Log($"本回合AI逻辑是：{behavior.ToString()}");
+        return behavior;
     }
     /// <summary>
     /// 评估现有的牌组下电脑的行为概率
