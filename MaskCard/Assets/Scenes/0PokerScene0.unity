@@ -1830,6 +1830,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardDeckSystem: {fileID: 752966010}
   drawOneCardBtn: {fileID: 86185419}
+  betManager: {fileID: 0}
 --- !u!4 &714463193
 Transform:
   m_ObjectHideFlags: 0
@@ -1859,6 +1860,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardDeckSystem: {fileID: 752966010}
   deleteCardBtn: {fileID: 773862647}
+  betManager: {fileID: 0}
+  dissolveDuration: 0.8
 --- !u!114 &714463195
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1888,6 +1891,7 @@ MonoBehaviour:
   cardDeckSystem: {fileID: 752966010}
   addPublicCardBtn: {fileID: 1160853776}
   peekCardScript: {fileID: 0}
+  betManager: {fileID: 0}
 --- !u!114 &714463197
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1903,6 +1907,7 @@ MonoBehaviour:
   cardDeckSystem: {fileID: 752966010}
   peekBtn: {fileID: 1083290402}
   peekCardOverlayPrefab: {fileID: 4132936062147507488, guid: 6aad0ce723de00842b17b02301b2bd04, type: 3}
+  betManager: {fileID: 0}
   peekOffset: {x: -10, y: 10}
   peekAlpha: 0.577
 --- !u!114 &714463198
@@ -1920,6 +1925,7 @@ MonoBehaviour:
   cardDeckSystem: {fileID: 752966010}
   swapTriggerBtn: {fileID: 1483646220}
   selectHighlightColor: {r: 1, g: 1, b: 0, a: 0.5}
+  betManager: {fileID: 0}
   _isSwapMode: 0
   _selectedHandCard: {fileID: 0}
   _selectedPublicCard: {fileID: 0}
@@ -2852,6 +2858,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   initialPlayerChips: 20
   initialBet: 1
+  costDeleteCard: 5
+  costSwapCard: 5
+  costAddPublic: 5
+  costDrawCard: 5
+  costPeekCard: 5
   playerChips: 0
   totalPot: 0
   currentGlobalStake: 0
@@ -2861,6 +2872,8 @@ MonoBehaviour:
   playerActedThisPhase: 0
   enemyActedThisPhase: 0
   isSettlementLocked: 0
+  isAllIn: 0
+  turnState: 0
   onChipsNegative:
     m_PersistentCalls:
       m_Calls: []
@@ -2877,6 +2890,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onFold:
+    m_PersistentCalls:
+      m_Calls: []
+  onAllIn:
     m_PersistentCalls:
       m_Calls: []
 --- !u!4 &1230495075
@@ -2909,7 +2925,10 @@ MonoBehaviour:
   betManager: {fileID: 1230495074}
   cardDeckSystem: {fileID: 752966010}
   stopShowdownIfJokerFound: 1
-  onJokerDetected:
+  onPublicJokerRevealed:
+    m_PersistentCalls:
+      m_Calls: []
+  onHandJokerRevealed:
     m_PersistentCalls:
       m_Calls: []
 --- !u!114 &1230495077
@@ -2924,9 +2943,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc372ee405ebc6a43b203dc833271d64, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bridge: {fileID: 1230495076}
-  betManager: {fileID: 1230495074}
-  cardDeckSystem: {fileID: 752966010}
 --- !u!1 &1294219520
 GameObject:
   m_ObjectHideFlags: 0

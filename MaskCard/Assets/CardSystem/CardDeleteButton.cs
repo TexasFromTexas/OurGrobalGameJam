@@ -1,17 +1,19 @@
 using UnityEngine;
 using UnityEngine.UI;
-using BetSystem; // Added namespace
+using BetSystem;
 
 /// <summary>
-/// 手牌+公牌删除脚本（带按钮配置+仅删除已翻开公牌）
-/// 挂载到CardEffectManager → 拖入CardDeckSystem和删除按钮即可
+/// 手牌+公牌删除脚本（适配小写dissolve+无延迟+重置Dissolve）
 /// </summary>
 public class CardDeleteButton : MonoBehaviour
 {
     [Header("核心引用")]
-    public CardDeckSystem cardDeckSystem; // 拖入CardDeckManager
-    public Button deleteCardBtn; // 拖入你的删除按钮
-    public BetManager betManager; // 自动查找
+    public CardDeckSystem cardDeckSystem;
+    public Button deleteCardBtn;
+    public BetManager betManager;
+
+    [Header("Dissolve渐变配置")]
+    public float dissolveDuration = 1.2f; // 渐变时长
 
     private bool _isDeleteMode = false;
     private GameObject _selectedHandCard = null;
@@ -60,7 +62,7 @@ public class CardDeleteButton : MonoBehaviour
         bool basicCondition = cardDeckSystem.IsInRound
                                  && cardDeckSystem.PlayerCardCount > 0
                                  && cardDeckSystem.PublicCardObjects.Count > 0;
-        
+
         bool costCondition = true;
         if (betManager != null)
         {
@@ -77,17 +79,29 @@ public class CardDeleteButton : MonoBehaviour
         _isDeleteMode = true;
         _selectedHandCard = null;
         _selectedPublicCard = null;
-        
+
         int cost = betManager != null ? betManager.costDeleteCard : 0;
-        Debug.Log($"进入删除模式：需要消耗 {cost} 筹码。先选手牌，再选【已翻开】的公牌"); 
+        Debug.Log($"进入删除模式：需要消耗 {cost} 筹码");
     }
 
     public void ExitDeleteMode()
     {
         _isDeleteMode = false;
+        // 退出模式时重置选中卡牌的Dissolve
+        if (_selectedHandCard != null)
+        {
+            CardDeleteClick handDel = _selectedHandCard.GetComponent<CardDeleteClick>();
+            if (handDel != null) handDel.ResetDissolveToDefault();
+        }
+        if (_selectedPublicCard != null)
+        {
+            CardDeleteClick pubDel = _selectedPublicCard.GetComponent<CardDeleteClick>();
+            if (pubDel != null) pubDel.ResetDissolveToDefault();
+        }
+
         _selectedHandCard = null;
         _selectedPublicCard = null;
-        Debug.Log("退出删除模式");
+        Debug.Log("退出删除模式，已重置Dissolve");
     }
 
     public void SelectHandCardToDelete(GameObject handCard)
@@ -106,23 +120,20 @@ public class CardDeleteButton : MonoBehaviour
         if (!_isDeleteMode || publicCard == null) return;
         if (cardDeckSystem.PublicCardObjects.Contains(publicCard))
         {
-            // ========== 核心修改：判断公牌是否已翻开 ==========
             CardFaceController cardFace = publicCard.GetComponent<CardFaceController>();
             if (cardFace == null)
             {
-                Debug.LogWarning($"公牌{publicCard.name}缺少CardFaceController组件，无法判断是否翻开！");
+                Debug.LogWarning($"公牌{publicCard.name}缺少CardFaceController！");
                 return;
             }
-            // 仅允许选中已翻开的公牌（_isShowingBack=false → 正面/已翻开）
             if (cardFace._isShowingBack)
             {
-                Debug.LogWarning($"无法选中：公牌{publicCard.name}未翻开（背面），仅可删除已翻开的公牌！");
+                Debug.LogWarning($"公牌{publicCard.name}未翻开，无法选中！");
                 return;
             }
 
-            // 只有已翻开的公牌才会被选中
             _selectedPublicCard = publicCard;
-            Debug.Log($"选中待删除公牌（已翻开）：{publicCard.GetComponent<CardDisplay>().cardData.cardName}");
+            Debug.Log($"选中待删除公牌：{publicCard.GetComponent<CardDisplay>().cardData.cardName}");
             if (_selectedHandCard != null) DeleteSelectedCards();
         }
     }
@@ -133,61 +144,81 @@ public class CardDeleteButton : MonoBehaviour
     {
         if (_selectedHandCard == null || _selectedPublicCard == null || cardDeckSystem == null) return;
 
-        // ========== NEW: Chip Cost Check ==========
+        // 筹码检查
         if (betManager != null)
         {
             if (!betManager.TrySpendChips(betManager.costDeleteCard))
             {
-                Debug.LogWarning($"筹码不足！无法删除卡牌。需要: {betManager.costDeleteCard}, 拥有: {betManager.playerChips}");
-                // Cancel operation but maybe keep selection? Or forced exit? 
-                // Let's force exit to avoid confusion.
+                Debug.LogWarning($"筹码不足！需要{betManager.costDeleteCard}，拥有{betManager.playerChips}");
                 ExitDeleteMode();
                 deleteCardBtn.GetComponentInChildren<Text>().text = "删除卡牌";
                 return;
             }
         }
-        // ==========================================
 
-        // ========== 处理手牌：先判断是否为鬼牌 ==========
+        // 处理手牌
         CardDisplay handCardDisplay = _selectedHandCard.GetComponent<CardDisplay>();
         if (handCardDisplay != null && handCardDisplay.cardData != null && handCardDisplay.cardData.rank == CardRank.Joker)
         {
-            // 手牌是鬼牌：洗回牌堆，不删除
             cardDeckSystem.ReturnJokerToDeck(_selectedHandCard, cardDeckSystem.playerCardObjects);
-            Debug.Log("选中的手牌是鬼牌，已洗回牌堆");
+            // 鬼牌洗回时重置Dissolve
+            CardDeleteClick handDel = _selectedHandCard.GetComponent<CardDeleteClick>();
+            if (handDel != null) handDel.ResetDissolveToDefault();
+            Debug.Log("手牌是鬼牌，已洗回牌堆并重置Dissolve");
         }
         else
         {
-            // 非鬼牌：正常删除
             if (cardDeckSystem.playerCardObjects.Contains(_selectedHandCard))
             {
-                cardDeckSystem.RemovePlayerCard(_selectedHandCard);
-                Debug.Log($"删除手牌：{_selectedHandCard.GetComponent<CardDisplay>().cardData.cardName}");
+                TriggerCardDissolveDelete(_selectedHandCard);
+                cardDeckSystem.playerCardObjects.Remove(_selectedHandCard);
+                Debug.Log($"触发手牌Dissolve删除：{handCardDisplay.cardData.cardName}");
             }
         }
 
-        // ========== 处理公牌：先判断是否为鬼牌 ==========
+        // 处理公牌
         CardDisplay publicCardDisplay = _selectedPublicCard.GetComponent<CardDisplay>();
         if (publicCardDisplay != null && publicCardDisplay.cardData != null && publicCardDisplay.cardData.rank == CardRank.Joker)
         {
-            // 公牌是鬼牌：洗回牌堆，不删除
             cardDeckSystem.ReturnJokerToDeck(_selectedPublicCard, cardDeckSystem.PublicCardObjects);
-            Debug.Log("选中的公牌是鬼牌，已洗回牌堆");
+            // 鬼牌洗回时重置Dissolve
+            CardDeleteClick pubDel = _selectedPublicCard.GetComponent<CardDeleteClick>();
+            if (pubDel != null) pubDel.ResetDissolveToDefault();
+            Debug.Log("公牌是鬼牌，已洗回牌堆并重置Dissolve");
         }
         else
         {
-            // 非鬼牌：正常删除
             if (cardDeckSystem.PublicCardObjects.Contains(_selectedPublicCard))
             {
-                cardDeckSystem.RemovePublicCard(_selectedPublicCard);
-                Debug.Log($"删除公牌（已翻开）：{_selectedPublicCard.GetComponent<CardDisplay>().cardData.cardName}");
+                TriggerCardDissolveDelete(_selectedPublicCard);
+                cardDeckSystem.PublicCardObjects.Remove(_selectedPublicCard);
+                Debug.Log($"触发公牌Dissolve删除：{publicCardDisplay.cardData.cardName}");
             }
         }
 
-        cardDeckSystem.RearrangePlayerHand();
         ExitDeleteMode();
         if (deleteCardBtn != null) deleteCardBtn.GetComponentInChildren<Text>().text = "删除卡牌";
-        Debug.Log($"操作完成！剩余手牌：{cardDeckSystem.PlayerCardCount}，剩余公牌：{cardDeckSystem.PublicCardObjects.Count}");
+        Debug.Log($"删除完成！剩余手牌：{cardDeckSystem.PlayerCardCount}，剩余公牌：{cardDeckSystem.PublicCardObjects.Count}");
+    }
+    #endregion
+
+    #region 触发Dissolve删除
+    private void TriggerCardDissolveDelete(GameObject targetCard)
+    {
+        if (targetCard == null) return;
+
+        CardDeleteClick deleteClick = targetCard.GetComponent<CardDeleteClick>();
+        if (deleteClick != null)
+        {
+            // 先重置再触发，避免数值异常
+            deleteClick.ResetDissolveToDefault();
+            deleteClick.TriggerDissolveDelete(dissolveDuration);
+        }
+        else
+        {
+            Debug.LogWarning($"卡牌{targetCard.name}缺少CardDeleteClick，直接删除");
+            Destroy(targetCard);
+        }
     }
     #endregion
 
@@ -195,6 +226,18 @@ public class CardDeleteButton : MonoBehaviour
     public bool IsDeleteMode => _isDeleteMode;
     public void ClearSelectedCards()
     {
+        // 清空选中时重置Dissolve
+        if (_selectedHandCard != null)
+        {
+            CardDeleteClick handDel = _selectedHandCard.GetComponent<CardDeleteClick>();
+            if (handDel != null) handDel.ResetDissolveToDefault();
+        }
+        if (_selectedPublicCard != null)
+        {
+            CardDeleteClick pubDel = _selectedPublicCard.GetComponent<CardDeleteClick>();
+            if (pubDel != null) pubDel.ResetDissolveToDefault();
+        }
+
         _selectedHandCard = null;
         _selectedPublicCard = null;
     }
