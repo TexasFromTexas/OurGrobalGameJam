@@ -339,19 +339,23 @@ public class Judge
         GetRateNow(Cards, out raiseRate, out foldRate, out dropRate);
         dropRate = 1 - raiseRate - foldRate;
 
+
         float randomValue = Random.Range(0f, 1f);
+        behaviorType behavior = behaviorType.fold;
         if (randomValue < raiseRate)
         {
-            return behaviorType.raise;
+            behavior = behaviorType.raise;
         }
-        else if (randomValue < (raiseRate + dropRate))
+        else if (randomValue < (raiseRate + foldRate))
         {
-            return behaviorType.drop;
+            behavior = behaviorType.fold;
         }
         else
         {
-            return behaviorType.fold;
+            behavior = behaviorType.drop;
         }
+        Debug.Log($"本回合AI逻辑是：{behavior.ToString()}");
+        return behavior;
     }
     /// <summary>
     /// 评估现有的牌组下电脑的行为概率
@@ -381,7 +385,6 @@ public class Judge
 
         // 获取当前牌型
         PokerHandType handType = GetHandTypeAdvanced(enemyCards);
-
         // 根据手牌数量选择对应的行为概率
         int cardCount = enemyCards.Count;
 
@@ -436,10 +439,12 @@ public class Judge
             foldRate /= total;
             dropRate /= total;
         }
+        Debug.Log("本回合的牌型为：" + handType.ToString() + " 加注倍率:" + raiseRate + " 根注倍率:" + foldRate + " 弃牌倍率:" + dropRate);
+
     }
 
     /// <summary>
-    /// 改进版的牌型判断，即使不足5张牌也能判断潜在牌型
+    /// AI逻辑判断，有可能不足5张牌也能判断潜在牌型
     /// </summary>
     private PokerHandType GetHandTypeAdvanced(List<PlayingCard> cards)
     {
@@ -474,8 +479,8 @@ public class Judge
             return PokerHandType.FullHouse;
         else if (threeOfAKind > 0 && cards.Count == 4)
             return PokerHandType.FullHouse;
-        else if (isPotentialFlush && isPotentialStraight)
-            return PokerHandType.StraightFlush; // 简化处理
+        //else if (isPotentialFlush && isPotentialStraight)
+        //    return PokerHandType.StraightFlush; // 简化处理
         else if (threeOfAKind > 0 && cards.Count == 4)
             return PokerHandType.ThreeOfAKind;
         else if (pairs >= 2)
