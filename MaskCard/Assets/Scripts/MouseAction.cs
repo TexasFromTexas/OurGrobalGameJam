@@ -7,6 +7,12 @@ public class MouseAction : MonoBehaviour
 {
     public GameObject canvas_ButArea;
 
+    /// <summary>
+    /// 鼠标点击物体并拖动，直到在遮罩内鼠标再次触发，触发finalAct
+    /// </summary>
+    /// <param name="obj"></param>
+    /// <param name="finalAct"></param>
+    /// <returns></returns>
     public IEnumerator BeginUseMask(GameObject obj, Action finalAct)
     {
         // 验证输入参数
