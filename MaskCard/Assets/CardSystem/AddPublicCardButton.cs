@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
-using BetSystem; // Added namespace
+using BetSystem;
 
 /// <summary>
 /// 抽取额外公牌脚本（新增：通知偷看脚本刷新）
@@ -12,10 +12,11 @@ public class AddPublicCardButton : MonoBehaviour
     public Button addPublicCardBtn;
     // 新增：引用偷看脚本
     public PeekCardOverlayButton peekCardScript;
-    
+
     public BetManager betManager;
 
-    private bool _isClicked = false;
+    // 🔴 核心修改1：删除_isClicked变量（这是单次限制的根源）
+    // private bool _isClicked = false;
 
     private void Start()
     {
@@ -48,22 +49,25 @@ public class AddPublicCardButton : MonoBehaviour
 
         bool isInRound = cardDeckSystem.IsInRound;
         bool hasCardsInDeck = cardDeckSystem.cardDeck.Count > 0;
-        
+
         bool costCondition = true;
         if (betManager != null)
         {
             costCondition = betManager.playerChips >= betManager.costAddPublic;
         }
 
-        bool canClick = isInRound && hasCardsInDeck && !_isClicked && costCondition;
+        // 🔴 核心修改2：移除!_isClicked条件（解除单次点击限制）
+        bool canClick = isInRound && hasCardsInDeck && costCondition;
 
         addPublicCardBtn.interactable = canClick;
 
         Text btnText = addPublicCardBtn.GetComponentInChildren<Text>();
         if (btnText != null)
         {
-            // Update text to potentially show cost? Or keep original style.
-            btnText.text = _isClicked ? "摘下面具" : "装出和善的样子";
+            // 🔴 核心修改3：按钮文本固定（不再根据_isClicked切换）
+            // 可根据需求修改文本内容，比如显示抽取成本
+            btnText.text = $"花费{betManager?.costAddPublic ?? 0}筹码抽公牌";
+            // 如果想保留原有文本，改为：btnText.text = "装出和善的样子";
         }
         else
         {
@@ -86,7 +90,7 @@ public class AddPublicCardButton : MonoBehaviour
         bool success = cardDeckSystem.DrawExtraPublicCard();
         if (success)
         {
-            _isClicked = true;
+            // 🔴 核心修改4：删除_isClicked = true（不再限制后续点击）
             Debug.Log("额外公牌抽取成功！");
 
             // 新增：通知偷看脚本刷新状态
@@ -110,7 +114,7 @@ public class AddPublicCardButton : MonoBehaviour
     {
         if (isInRound)
         {
-            _isClicked = false;
+            // 🔴 核心修改5：删除_isClicked重置（变量已移除）
             Invoke(nameof(UpdateButtonInteractable), 0.1f);
         }
         else
