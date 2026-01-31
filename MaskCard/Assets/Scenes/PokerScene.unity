@@ -1288,7 +1288,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &569334449
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1887,6 +1887,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardDeckSystem: {fileID: 752966010}
   addPublicCardBtn: {fileID: 1160853776}
+  peekCardScript: {fileID: 0}
 --- !u!114 &714463197
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2089,6 +2090,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardDeck: []
   playerCardObjects: []
+  enemyCardObjects: []
+  publicCardObjects: []
   startRoundButton: {fileID: 2060213065}
   endRoundButton: {fileID: 1797820305}
   cardPrefab: {fileID: 4132936062147507488, guid: 6aad0ce723de00842b17b02301b2bd04, type: 3}
@@ -2802,6 +2805,7 @@ GameObject:
   - component: {fileID: 1230495074}
   - component: {fileID: 1230495073}
   - component: {fileID: 1230495076}
+  - component: {fileID: 1230495077}
   m_Layer: 0
   m_Name: BetSystem
   m_TagString: Untagged
@@ -2856,6 +2860,7 @@ MonoBehaviour:
   currentPhase: 0
   playerActedThisPhase: 0
   enemyActedThisPhase: 0
+  isSettlementLocked: 0
   onChipsNegative:
     m_PersistentCalls:
       m_Calls: []
@@ -2869,6 +2874,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onNewRoundStarted:
+    m_PersistentCalls:
+      m_Calls: []
+  onFold:
     m_PersistentCalls:
       m_Calls: []
 --- !u!4 &1230495075
@@ -2900,6 +2908,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   betManager: {fileID: 1230495074}
   cardDeckSystem: {fileID: 752966010}
+  stopShowdownIfJokerFound: 1
+  onJokerDetected:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &1230495077
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1230495072}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 824bceb023e354947aa3a15760d8ecc6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  betManager: {fileID: 0}
+  cardDeckSystem: {fileID: 0}
+  minThinkingTime: 0.3
+  maxThinkingTime: 0.6
 --- !u!1 &1294219520
 GameObject:
   m_ObjectHideFlags: 0
@@ -3914,7 +3942,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1649510818
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4171,7 +4199,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1748489989
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5039,7 +5067,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2109052752
 RectTransform:
   m_ObjectHideFlags: 0
