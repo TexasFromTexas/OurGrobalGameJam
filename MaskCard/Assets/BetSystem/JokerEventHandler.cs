@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.UI;
 using BetSystem;
-
+//111
 namespace BetSystem
 {
     public class JokerEventHandler : MonoBehaviour
@@ -65,7 +65,7 @@ namespace BetSystem
             ResetTotalPot();
 
             // 4. 鬼牌<位置+属性+状态>交换公牌（核心重构逻辑）
-            ReplaceJokerWithPublicCard();
+            // ReplaceJokerWithPublicCard();
         }
 
         #region 核心重构：鬼牌<位置+属性+状态>交换公牌
