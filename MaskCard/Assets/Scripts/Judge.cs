@@ -7,7 +7,7 @@ using System.Linq;
 public enum behaviorType
 {
     raise,
-    drop,
+    call,
     fold
 }
 
@@ -333,26 +333,26 @@ public class Judge
     public behaviorType GetAIBehavior(List<PlayingCard> Cards)
     {
         float raiseRate = 0;
+        float callRate = 0;
         float foldRate = 0;
-        float dropRate = 0;
 
-        GetRateNow(Cards, out raiseRate, out foldRate, out dropRate);
-        dropRate = 1 - raiseRate - foldRate;
+        GetRateNow(Cards, out raiseRate, out callRate, out foldRate);
+        foldRate = 1 - raiseRate - callRate;
 
 
         float randomValue = Random.Range(0f, 1f);
-        behaviorType behavior = behaviorType.fold;
+        behaviorType behavior = behaviorType.call;
         if (randomValue < raiseRate)
         {
             behavior = behaviorType.raise;
         }
-        else if (randomValue < (raiseRate + foldRate))
+        else if (randomValue < (raiseRate + callRate))
         {
-            behavior = behaviorType.fold;
+            behavior = behaviorType.call;
         }
         else
         {
-            behavior = behaviorType.drop;
+            behavior = behaviorType.fold;
         }
         Debug.Log($"本回合AI逻辑是：{behavior.ToString()}");
         return behavior;
@@ -362,24 +362,24 @@ public class Judge
     /// </summary>
     /// <param name="enemyCards">包括手牌和已翻开的公牌</param>
     /// <param name="raiseRate">加注的概率</param>
-    /// <param name="foldRate">跟注的概率</param>
-    /// <param name="dropRate">弃牌的概率</param>
-    public void GetRateNow(List<PlayingCard> enemyCards, out float raiseRate, out float foldRate, out float dropRate)
+    /// <param name="callRate">跟注的概率</param>
+    /// <param name="foldRate">弃牌的概率</param>
+    public void GetRateNow(List<PlayingCard> enemyCards, out float raiseRate, out float callRate, out float foldRate)
     {
 
         raiseRate = 0f;
         foldRate = 0f;
-        dropRate = 0f;
+        callRate = 0f;
 
         if (enemyCards == null || enemyCards.Count == 0)
         {
             // 如果没有牌，默认为高牌且保守策略
             var data = aiBehaviorDataDict.ContainsKey(PokerHandType.HighCard) ?
                       aiBehaviorDataDict[PokerHandType.HighCard] :
-                      new AIBehaviorData { LessThanFiveRaiseRate = 0.05f, LessThanFiveFoldRate = 0.9f, LessThanFiveDropRate = 0.05f };
+                      new AIBehaviorData { LessThanFiveRaiseRate = 0.05f, LessThanFiveCallRate = 0.9f, LessThanFiveFoldRate = 0.05f };
             raiseRate = data.LessThanFiveRaiseRate;
+            callRate = data.LessThanFiveCallRate;
             foldRate = data.LessThanFiveFoldRate;
-            dropRate = data.LessThanFiveDropRate;
             return;
         }
 
@@ -395,18 +395,18 @@ public class Judge
             {
                 var data = aiBehaviorDataDict[handType];
                 raiseRate = data.LessThanFiveRaiseRate;
+                callRate = data.LessThanFiveCallRate;
                 foldRate = data.LessThanFiveFoldRate;
-                dropRate = data.LessThanFiveDropRate;
             }
             else
             {
                 // 如果找不到对应牌型，使用默认值
                 var data = aiBehaviorDataDict.ContainsKey(PokerHandType.HighCard) ?
                           aiBehaviorDataDict[PokerHandType.HighCard] :
-                          new AIBehaviorData { LessThanFiveRaiseRate = 0.05f, LessThanFiveFoldRate = 0.9f, LessThanFiveDropRate = 0.05f };
+                          new AIBehaviorData { LessThanFiveRaiseRate = 0.05f, LessThanFiveCallRate = 0.9f, LessThanFiveFoldRate = 0.05f };
                 raiseRate = data.LessThanFiveRaiseRate;
+                callRate = data.LessThanFiveCallRate;
                 foldRate = data.LessThanFiveFoldRate;
-                dropRate = data.LessThanFiveDropRate;
             }
         }
         else
@@ -416,30 +416,30 @@ public class Judge
             {
                 var data = aiBehaviorDataDict[handType];
                 raiseRate = data.EqualFiveRaiseRate;
+                callRate = data.EqualFiveCallRate;
                 foldRate = data.EqualFiveFoldRate;
-                dropRate = data.EqualFiveDropRate;
             }
             else
             {
                 // 如果找不到对应牌型，使用默认值
                 var data = aiBehaviorDataDict.ContainsKey(PokerHandType.HighCard) ?
                           aiBehaviorDataDict[PokerHandType.HighCard] :
-                          new AIBehaviorData { EqualFiveRaiseRate = 0.05f, EqualFiveFoldRate = 0.3f, EqualFiveDropRate = 0.65f };
+                          new AIBehaviorData { EqualFiveRaiseRate = 0.05f, EqualFiveCallRate = 0.3f, EqualFiveFoldRate = 0.65f };
                 raiseRate = data.EqualFiveRaiseRate;
+                callRate = data.EqualFiveCallRate;
                 foldRate = data.EqualFiveFoldRate;
-                dropRate = data.EqualFiveDropRate;
             }
         }
 
         // 确保概率和为1
-        float total = raiseRate + foldRate + dropRate;
+        float total = raiseRate + callRate + foldRate;
         if (total > 0)
         {
             raiseRate /= total;
+            callRate /= total;
             foldRate /= total;
-            dropRate /= total;
         }
-        Debug.Log("本回合的牌型为：" + handType.ToString() + " 加注倍率:" + raiseRate + " 根注倍率:" + foldRate + " 弃牌倍率:" + dropRate);
+        Debug.Log("本回合的牌型为：" + handType.ToString() + " 加注倍率:" + raiseRate + " 根注倍率:" + callRate + " 弃牌倍率:" + foldRate);
 
     }
 
@@ -578,11 +578,11 @@ public class Judge
                 {
                     HandType = handType,
                     LessThanFiveRaiseRate = ParseFloat(values[1]),
-                    LessThanFiveFoldRate = ParseFloat(values[2]),
-                    LessThanFiveDropRate = ParseFloat(values[3]),
+                    LessThanFiveCallRate = ParseFloat(values[2]),
+                    LessThanFiveFoldRate = ParseFloat(values[3]),
                     EqualFiveRaiseRate = ParseFloat(values[4]),
-                    EqualFiveFoldRate = ParseFloat(values[5]),
-                    EqualFiveDropRate = ParseFloat(values[6])
+                    EqualFiveCallRate = ParseFloat(values[5]),
+                    EqualFiveFoldRate = ParseFloat(values[6])
                 };
 
                 aiBehaviorDataDict[handType] = data;
@@ -602,16 +602,16 @@ public class Judge
         // 默认值：当找不到CSV文件时使用
         var defaultData = new[]
         {
-            new AIBehaviorData { HandType = PokerHandType.HighCard, LessThanFiveRaiseRate = 0.05f, LessThanFiveFoldRate = 0.9f, LessThanFiveDropRate = 0.05f, EqualFiveRaiseRate = 0.05f, EqualFiveFoldRate = 0.3f, EqualFiveDropRate = 0.65f },
-            new AIBehaviorData { HandType = PokerHandType.OnePair, LessThanFiveRaiseRate = 0.7f, LessThanFiveFoldRate = 0.25f, LessThanFiveDropRate = 0.05f, EqualFiveRaiseRate = 0.2f, EqualFiveFoldRate = 0.5f, EqualFiveDropRate = 0.3f },
-            new AIBehaviorData { HandType = PokerHandType.TwoPair, LessThanFiveRaiseRate = 0.8f, LessThanFiveFoldRate = 0.15f, LessThanFiveDropRate = 0.05f, EqualFiveRaiseRate = 0.4f, EqualFiveFoldRate = 0.4f, EqualFiveDropRate = 0.2f },
-            new AIBehaviorData { HandType = PokerHandType.ThreeOfAKind, LessThanFiveRaiseRate = 0.85f, LessThanFiveFoldRate = 0.1f, LessThanFiveDropRate = 0.05f, EqualFiveRaiseRate = 0.6f, EqualFiveFoldRate = 0.3f, EqualFiveDropRate = 0.1f },
-            new AIBehaviorData { HandType = PokerHandType.Straight, LessThanFiveRaiseRate = 0.9f, LessThanFiveFoldRate = 0.08f, LessThanFiveDropRate = 0.02f, EqualFiveRaiseRate = 0.7f, EqualFiveFoldRate = 0.2f, EqualFiveDropRate = 0.1f },
-            new AIBehaviorData { HandType = PokerHandType.Flush, LessThanFiveRaiseRate = 0.9f, LessThanFiveFoldRate = 0.08f, LessThanFiveDropRate = 0.02f, EqualFiveRaiseRate = 0.7f, EqualFiveFoldRate = 0.2f, EqualFiveDropRate = 0.1f },
-            new AIBehaviorData { HandType = PokerHandType.FullHouse, LessThanFiveRaiseRate = 0.95f, LessThanFiveFoldRate = 0.04f, LessThanFiveDropRate = 0.01f, EqualFiveRaiseRate = 0.8f, EqualFiveFoldRate = 0.15f, EqualFiveDropRate = 0.05f },
-            new AIBehaviorData { HandType = PokerHandType.FourOfAKind, LessThanFiveRaiseRate = 0.98f, LessThanFiveFoldRate = 0.01f, LessThanFiveDropRate = 0.01f, EqualFiveRaiseRate = 0.9f, EqualFiveFoldRate = 0.08f, EqualFiveDropRate = 0.02f },
-            new AIBehaviorData { HandType = PokerHandType.StraightFlush, LessThanFiveRaiseRate = 0.99f, LessThanFiveFoldRate = 0.005f, LessThanFiveDropRate = 0.005f, EqualFiveRaiseRate = 0.95f, EqualFiveFoldRate = 0.04f, EqualFiveDropRate = 0.01f },
-            new AIBehaviorData { HandType = PokerHandType.RoyalFlush, LessThanFiveRaiseRate = 1.0f, LessThanFiveFoldRate = 0.0f, LessThanFiveDropRate = 0.0f, EqualFiveRaiseRate = 1.0f, EqualFiveFoldRate = 0.0f, EqualFiveDropRate = 0.0f }
+            new AIBehaviorData { HandType = PokerHandType.HighCard, LessThanFiveRaiseRate = 0.05f, LessThanFiveCallRate = 0.9f, LessThanFiveFoldRate = 0.05f, EqualFiveRaiseRate = 0.05f, EqualFiveCallRate = 0.3f, EqualFiveFoldRate = 0.65f },
+            new AIBehaviorData { HandType = PokerHandType.OnePair, LessThanFiveRaiseRate = 0.7f, LessThanFiveCallRate = 0.25f, LessThanFiveFoldRate = 0.05f, EqualFiveRaiseRate = 0.2f, EqualFiveCallRate = 0.5f, EqualFiveFoldRate = 0.3f },
+            new AIBehaviorData { HandType = PokerHandType.TwoPair, LessThanFiveRaiseRate = 0.8f, LessThanFiveCallRate = 0.15f, LessThanFiveFoldRate = 0.05f, EqualFiveRaiseRate = 0.4f, EqualFiveCallRate = 0.4f, EqualFiveFoldRate = 0.2f },
+            new AIBehaviorData { HandType = PokerHandType.ThreeOfAKind, LessThanFiveRaiseRate = 0.85f, LessThanFiveCallRate = 0.1f, LessThanFiveFoldRate = 0.05f, EqualFiveRaiseRate = 0.6f, EqualFiveCallRate = 0.3f, EqualFiveFoldRate = 0.1f },
+            new AIBehaviorData { HandType = PokerHandType.Straight, LessThanFiveRaiseRate = 0.9f, LessThanFiveCallRate = 0.08f, LessThanFiveFoldRate = 0.02f, EqualFiveRaiseRate = 0.7f, EqualFiveCallRate = 0.2f, EqualFiveFoldRate = 0.1f },
+            new AIBehaviorData { HandType = PokerHandType.Flush, LessThanFiveRaiseRate = 0.9f, LessThanFiveCallRate = 0.08f, LessThanFiveFoldRate = 0.02f, EqualFiveRaiseRate = 0.7f, EqualFiveCallRate = 0.2f, EqualFiveFoldRate = 0.1f },
+            new AIBehaviorData { HandType = PokerHandType.FullHouse, LessThanFiveRaiseRate = 0.95f, LessThanFiveCallRate = 0.04f, LessThanFiveFoldRate = 0.01f, EqualFiveRaiseRate = 0.8f, EqualFiveCallRate = 0.15f, EqualFiveFoldRate = 0.05f },
+            new AIBehaviorData { HandType = PokerHandType.FourOfAKind, LessThanFiveRaiseRate = 0.98f, LessThanFiveCallRate = 0.01f, LessThanFiveFoldRate = 0.01f, EqualFiveRaiseRate = 0.9f, EqualFiveCallRate = 0.08f, EqualFiveFoldRate = 0.02f },
+            new AIBehaviorData { HandType = PokerHandType.StraightFlush, LessThanFiveRaiseRate = 0.99f, LessThanFiveCallRate = 0.005f, LessThanFiveFoldRate = 0.005f, EqualFiveRaiseRate = 0.95f, EqualFiveCallRate = 0.04f, EqualFiveFoldRate = 0.01f },
+            new AIBehaviorData { HandType = PokerHandType.RoyalFlush, LessThanFiveRaiseRate = 1.0f, LessThanFiveCallRate = 0.0f, LessThanFiveFoldRate = 0.0f, EqualFiveRaiseRate = 1.0f, EqualFiveCallRate = 0.0f, EqualFiveFoldRate = 0.0f }
         };
 
         foreach (var data in defaultData)
@@ -662,8 +662,8 @@ public class AIBehaviorData
     public PokerHandType HandType;
     public float LessThanFiveRaiseRate;
     public float LessThanFiveFoldRate;
-    public float LessThanFiveDropRate;
+    public float LessThanFiveCallRate;
     public float EqualFiveRaiseRate;
     public float EqualFiveFoldRate;
-    public float EqualFiveDropRate;
+    public float EqualFiveCallRate;
 }

@@ -114,7 +114,7 @@ namespace BetSystem
                case behaviorType.fold:
                    betManager.EnemyFold();
                    break;
-               case behaviorType.drop:
+               case behaviorType.call:
                    betManager.EnemyCall();
                    break;
            }
