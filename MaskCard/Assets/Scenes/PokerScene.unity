@@ -4753,14 +4753,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0d9917f0b53093347a8048b1eda8ccda, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  backgroundLayer: {fileID: 405962569}
-  bossLayer: {fileID: 821096584}
-  cardsLayer: {fileID: 1308663738}
+  layers:
+  - layer: {fileID: 405962569}
+    multiplier: 1
+  - layer: {fileID: 821096584}
+    multiplier: 0.6
+  - layer: {fileID: 1308663738}
+    multiplier: 0.2
   mouseSensitivity: 0.3
-  backLayerMultiplier: 1
-  bossLayerMultiplier: 0.5
-  cardsLayerMultiplier: 0.2
   smoothSpeed: 5
+  edgeThreshold: 0.2
   leftBoundary: -200
   rightBoundary: 200
 --- !u!4 &1791984533
