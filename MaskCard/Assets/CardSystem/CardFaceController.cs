@@ -14,7 +14,7 @@ public class CardFaceController : MonoBehaviour
     [SerializeField, ReadOnly]
     private string currentCardState = "未初始化";
 
-    public bool _isShowingBack = false;
+    public bool _isShowingBack = true; // Default to TRUE (Face Down)
     private Text _autoFoundCardText;
     private CardDisplay _cardDisplay; // 存储卡牌固定数据
     public PlayingCard bindingCardData; // 绑定的核心数据（唯一数据源）
@@ -28,6 +28,9 @@ public class CardFaceController : MonoBehaviour
         {
             _autoFoundCardText = GetComponentInChildren<Text>(true);
         }
+        
+        // Force Apply Initial State (Face Down)
+        ApplyFaceState();
     }
 
     // ========== 新增：获取牌面固定信息 ==========
@@ -63,12 +66,19 @@ public class CardFaceController : MonoBehaviour
     public void ShowBackFace()
     {
         _isShowingBack = true;
+        // Debug.Log($"[CardFaceController] ShowBACKFace on {gameObject.name}");
         ApplyFaceState();
     }
 
     public void ShowFrontFace()
     {
         _isShowingBack = false;
+        
+        // DEBUG: Trace who is revealing the card
+        if (gameObject.GetComponentInParent<CardDeckSystem>() != null || transform.parent.name.Contains("Public"))
+        {
+             Debug.Log($"[CardFaceController] ShowFrontFace called on {gameObject.name}. Stack: {System.Environment.StackTrace}");
+        }
 
         ApplyFaceState();
     }

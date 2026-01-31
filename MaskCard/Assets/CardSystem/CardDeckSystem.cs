@@ -399,6 +399,9 @@ public class CardDeckSystem : MonoBehaviour
         {
             faceController = cardObj.AddComponent<CardFaceController>();
         }
+        
+        // STRICT INIT: Always start face down
+        faceController.ShowBackFace();
 
         // ===================== 核心修改：区分公共牌/其他牌 =====================
         // 判断当前生成的卡牌是否是公共牌（通过父区域对比）
@@ -406,13 +409,13 @@ public class CardDeckSystem : MonoBehaviour
         {
             // 公共牌：强制设置为暗面
             faceController.ShowBackFace();
-            Debug.Log($"生成公共牌：{cardData.cardName} → 暗面");
+            // Debug.Log($"[CardDeckSystem] 生成公共牌：{cardData.cardName} → 暗面 (Parent Match: YES)");
         }
         else
         {
             // 玩家牌/敌人牌：强制设置为亮面
             faceController.ShowFrontFace();
-            Debug.Log($"生成玩家/敌人牌：{cardData.cardName} → 亮面");
+            // Debug.Log($"[CardDeckSystem] 生成玩家/敌人牌：{cardData.cardName} → 亮面 (Parent Match: NO, Area: {parentArea.name})");
         }
         // =====================================================================
 

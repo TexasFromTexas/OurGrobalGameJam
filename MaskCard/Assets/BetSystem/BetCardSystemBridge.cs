@@ -17,6 +17,9 @@ namespace BetSystem
         public UnityEvent onPublicJokerRevealed; // Triggered during Showdown/Win Check if public has joker
         public UnityEvent<bool, bool> onHandJokerRevealed; // (hasPlayerHandJoker, hasEnemyHandJoker) - Triggered anytime
 
+        // BRUTE FORCE FIX: Block all reveals until dealing is proven done
+        // private bool isRevealPhaseActive = false; // REVERTED
+        
         private void Start()
         {
             if (betManager == null) betManager = GetComponent<BetManager>();
@@ -72,6 +75,9 @@ namespace BetSystem
 
         private void OnBettingRoundRestarted()
         {
+            // STOP any pending Phase routines or Delayed Starts from previous round
+            StopAllCoroutines();
+
             if (cardDeckSystem == null) return;
             if (cardDeckSystem.IsInRound)
             {
@@ -84,22 +90,50 @@ namespace BetSystem
                 if (cardDeckSystem.startRoundButton.interactable)
                     cardDeckSystem.startRoundButton.onClick.Invoke();
             }
+            
+            // NEW: Preflop also needs to transition from Dealing -> Betting
+            // CardDeckSystem takes time to deal. Let's give it 1.0s then Start Betting.
+            StartCoroutine(DelayedPreflopStart(1.5f));
+        }
+
+        private IEnumerator<WaitForSeconds> DelayedPreflopStart(float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            if (betManager.currentPhase == BetPhase.Preflop)
+            {
+                betManager.StartBettingPhase();
+            }
         }
 
         private void OnPhaseChanged(BetPhase phase)
+        {
+            if (phase == BetPhase.Preflop) return; // Ignore Preflop (Handled by DelayedPreflopStart)
+
+            Debug.Log($"[Bridge] OnPhaseChanged received: {phase}. Starting Routine...");
+            float delay = 0.5f; // Small delay for visual pacing
+            StartCoroutine(PerformPhaseRoutine(phase, delay));
+        }
+
+        private IEnumerator<WaitForSeconds> PerformPhaseRoutine(BetPhase phase, float delay)
         {
             switch (phase)
             {
                 case BetPhase.Flop:
                     RevealCommunityCards(3);
+                    yield return new WaitForSeconds(delay);
+                    betManager.StartBettingPhase();
                     break;
                 case BetPhase.Turn:
-                    CheckAndSkipIfRevealedJoker(3); // Turn is index 3 (4th card)
+                    CheckAndSkipIfRevealedJoker(3); 
                     RevealCommunityCards(4);
+                    yield return new WaitForSeconds(delay);
+                    betManager.StartBettingPhase();
                     break;
                 case BetPhase.River:
-                    CheckAndSkipIfRevealedJoker(4); // River is index 4 (5th card)
+                    CheckAndSkipIfRevealedJoker(4); 
                     RevealCommunityCards(5);
+                    yield return new WaitForSeconds(delay);
+                    betManager.StartBettingPhase();
                     break;
                 case BetPhase.Showdown:
                     RevealAllCommunityCards();
@@ -124,7 +158,10 @@ namespace BetSystem
                 // BetManager calls onPhaseChanged -> Bridge calls SkipPhase -> BetManager updates Phase -> onPhaseChanged...
                 // This is recursion, but it's finite (Turn -> River -> Showdown). 
                 // So calling SkipPhase directly is fine as long as we don't block.
-                betManager.SkipPhase();
+                
+                // DIAGNOSTIC DISABLE:
+                Debug.LogWarning($"[Bridge] JOKER DETECTED at index {cardIndex}! Would SKIP PHASE but disabled for debugging.");
+                // betManager.SkipPhase();
             }
         }
 
@@ -236,7 +273,11 @@ namespace BetSystem
             }
         }
         
-        public void RevealAllCommunityCards() => RevealCommunityCards(5);
+        public void RevealAllCommunityCards()
+        {
+             Debug.Log($"[Bridge] RevealAllCommunityCards CALLED! Stack: {System.Environment.StackTrace}");
+             RevealCommunityCards(5);
+        }
 
         private List<PlayingCard> GetCardsFromObjects(List<GameObject> c) // ... simplified helper
         {
