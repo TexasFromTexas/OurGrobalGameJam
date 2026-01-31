@@ -11,6 +11,7 @@ public class CardDeleteButton : MonoBehaviour
     public CardDeckSystem cardDeckSystem;
     public Button deleteCardBtn;
     public BetManager betManager;
+    public MouseAction mouseAction;
 
     [Header("Dissolve渐变配置")]
     public float dissolveDuration = 1.2f; // 渐变时长
@@ -27,10 +28,12 @@ public class CardDeleteButton : MonoBehaviour
             return;
         }
         if (betManager == null) betManager = FindFirstObjectByType<BetManager>();
+        mouseAction = FindFirstObjectByType<MouseAction>();
 
         if (deleteCardBtn != null)
         {
-            deleteCardBtn.onClick.AddListener(ToggleDeleteMode);
+           // deleteCardBtn.onClick.AddListener(ToggleDeleteMode);
+            deleteCardBtn.onClick.AddListener(() => StartCoroutine(mouseAction.BeginUseMask(deleteCardBtn.gameObject, () => ToggleDeleteMode())));
             UpdateButtonInteractable();
         }
     }
