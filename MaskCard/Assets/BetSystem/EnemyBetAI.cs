@@ -13,7 +13,7 @@ namespace BetSystem
         [Header("Settings")]
         public float minThinkingTime = 1.0f;
         public float maxThinkingTime = 2.0f;
-        
+
         // Internal flag to prevent double-acting during coroutine
         private bool isThinking = false;
 
@@ -27,7 +27,7 @@ namespace BetSystem
                 betManager.onGameStateChanged.AddListener(CheckTurn);
                 betManager.onNewRoundStarted.AddListener(OnNewRound);
             }
-            
+
             // Initial check
             CheckTurn();
         }
@@ -54,7 +54,7 @@ namespace BetSystem
             // 3. Do we need to act?
             // - If we haven't acted yet this phase
             // - OR if player raised (we contributed less)
-            bool needToAct = !betManager.enemyActedThisPhase 
+            bool needToAct = !betManager.enemyActedThisPhase
                              || (betManager.enemyContributedThisPhase < betManager.playerContributedThisPhase);
 
             if (needToAct)
@@ -66,20 +66,20 @@ namespace BetSystem
         private IEnumerator ThinkAndAct()
         {
             isThinking = true;
-            
+
             // Simulate processing time
             float delay = Random.Range(minThinkingTime, maxThinkingTime);
             yield return new WaitForSeconds(delay);
 
             // Double check state after delay (in case player folded or game ended)
-            if (betManager.currentPhase == BetPhase.Showdown || betManager.isSettlementLocked) 
+            if (betManager.currentPhase == BetPhase.Showdown || betManager.isSettlementLocked)
             {
                 isThinking = false;
                 yield break;
             }
 
             MakeDecision();
-            
+
             isThinking = false;
         }
 
@@ -94,30 +94,41 @@ namespace BetSystem
 
             // Gather Cards
             List<PlayingCard> enemyHand = GetCardsFromTransform(cardDeckSystem.enemyHandArea);
-            List<PlayingCard> publicCards = GetCardsFromObjects(cardDeckSystem.PublicCardObjects);
-            
+            //  List<PlayingCard> publicCards = GetCardsFromObjects(cardDeckSystem.PublicCardObjects);
+            List<GameObject> PublicCardFlip = new List<GameObject>();
+            foreach (var item in cardDeckSystem.PublicCardObjects)
+            {
+                if (item.GetComponent<CardFaceController>()?._isShowingBack != false)
+                {
+                    PublicCardFlip.Add(item);
+                }
+            }
+
+
+            List<PlayingCard> publicCards = GetCardsFromObjects(PublicCardFlip);
             List<PlayingCard> fullHand = new List<PlayingCard>(enemyHand);
             fullHand.AddRange(publicCards);
+            // fullHand.AddRange(publicCards);
 
             // Judge AI Logic
             float raiseRate, callRate, foldRate;
-            
+
             // Note: Judge.GetRateNow signature: (enemyCards, raise, "fold"(Call), "drop"(Fold))
             Judge.Instance.GetRateNow(fullHand, out raiseRate, out callRate, out foldRate);
-           behaviorType behavior = Judge.Instance.GetAIBehavior(fullHand);
+            behaviorType behavior = Judge.Instance.GetAIBehavior(fullHand);
 
-           switch (behavior)
-           {
-               case behaviorType.raise:
-                   betManager.EnemyRaise();
-                   break;
-               case behaviorType.fold:
-                   betManager.EnemyFold();
-                   break;
-               case behaviorType.call:
-                   betManager.EnemyCall();
-                   break;
-           }
+            switch (behavior)
+            {
+                case behaviorType.raise:
+                    betManager.EnemyRaise();
+                    break;
+                case behaviorType.fold:
+                    betManager.EnemyFold();
+                    break;
+                case behaviorType.call:
+                    betManager.EnemyCall();
+                    break;
+            }
         }
 
         // Helpers reused from Bridge

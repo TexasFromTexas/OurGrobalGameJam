@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using BetSystem; // Added namespace
 
 /// <summary>
 /// 手牌+公牌删除脚本（带按钮配置+仅删除已翻开公牌）
@@ -10,6 +11,7 @@ public class CardDeleteButton : MonoBehaviour
     [Header("核心引用")]
     public CardDeckSystem cardDeckSystem; // 拖入CardDeckManager
     public Button deleteCardBtn; // 拖入你的删除按钮
+    public BetManager betManager; // 自动查找
 
     private bool _isDeleteMode = false;
     private GameObject _selectedHandCard = null;
@@ -22,6 +24,8 @@ public class CardDeleteButton : MonoBehaviour
             Debug.LogError("请拖入CardDeckSystem！");
             return;
         }
+        if (betManager == null) betManager = FindFirstObjectByType<BetManager>();
+
         if (deleteCardBtn != null)
         {
             deleteCardBtn.onClick.AddListener(ToggleDeleteMode);
@@ -53,9 +57,17 @@ public class CardDeleteButton : MonoBehaviour
 
     private void UpdateButtonInteractable()
     {
-        deleteCardBtn.interactable = cardDeckSystem.IsInRound
+        bool basicCondition = cardDeckSystem.IsInRound
                                  && cardDeckSystem.PlayerCardCount > 0
                                  && cardDeckSystem.PublicCardObjects.Count > 0;
+        
+        bool costCondition = true;
+        if (betManager != null)
+        {
+            costCondition = betManager.playerChips >= betManager.costDeleteCard;
+        }
+
+        deleteCardBtn.interactable = basicCondition && costCondition;
     }
 
     #region 对外接口
@@ -65,7 +77,9 @@ public class CardDeleteButton : MonoBehaviour
         _isDeleteMode = true;
         _selectedHandCard = null;
         _selectedPublicCard = null;
-        Debug.Log("进入删除模式：先选手牌，再选【已翻开】的公牌"); // 提示更新
+        
+        int cost = betManager != null ? betManager.costDeleteCard : 0;
+        Debug.Log($"进入删除模式：需要消耗 {cost} 筹码。先选手牌，再选【已翻开】的公牌"); 
     }
 
     public void ExitDeleteMode()
@@ -119,6 +133,21 @@ public class CardDeleteButton : MonoBehaviour
     {
         if (_selectedHandCard == null || _selectedPublicCard == null || cardDeckSystem == null) return;
 
+        // ========== NEW: Chip Cost Check ==========
+        if (betManager != null)
+        {
+            if (!betManager.TrySpendChips(betManager.costDeleteCard))
+            {
+                Debug.LogWarning($"筹码不足！无法删除卡牌。需要: {betManager.costDeleteCard}, 拥有: {betManager.playerChips}");
+                // Cancel operation but maybe keep selection? Or forced exit? 
+                // Let's force exit to avoid confusion.
+                ExitDeleteMode();
+                deleteCardBtn.GetComponentInChildren<Text>().text = "删除卡牌";
+                return;
+            }
+        }
+        // ==========================================
+
         // ========== 处理手牌：先判断是否为鬼牌 ==========
         CardDisplay handCardDisplay = _selectedHandCard.GetComponent<CardDisplay>();
         if (handCardDisplay != null && handCardDisplay.cardData != null && handCardDisplay.cardData.rank == CardRank.Joker)
@@ -157,7 +186,7 @@ public class CardDeleteButton : MonoBehaviour
 
         cardDeckSystem.RearrangePlayerHand();
         ExitDeleteMode();
-        if (deleteCardBtn != null) deleteCardBtn.GetComponentInChildren<Text>().text = "表现生气的样子";
+        if (deleteCardBtn != null) deleteCardBtn.GetComponentInChildren<Text>().text = "删除卡牌";
         Debug.Log($"操作完成！剩余手牌：{cardDeckSystem.PlayerCardCount}，剩余公牌：{cardDeckSystem.PublicCardObjects.Count}");
     }
     #endregion

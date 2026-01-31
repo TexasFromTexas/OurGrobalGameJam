@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
+using BetSystem; // Added namespace
 
 /// <summary>
 /// 手牌↔公牌交换功能（最终修复版+仅回合开始后启用按钮）
@@ -12,6 +13,8 @@ public class SwapCardHandPublic : MonoBehaviour
     public CardDeckSystem cardDeckSystem; // 拖入CardDeckManager
     public Button swapTriggerBtn; // 交换触发按钮
     public Color selectHighlightColor = new Color(1, 1, 0, 0.5f); // 选中高亮色
+
+    public BetManager betManager;
 
     [Header("调试参数（只读）")]
     [SerializeField, ReadOnly] private bool _isSwapMode = false;
@@ -35,6 +38,7 @@ public class SwapCardHandPublic : MonoBehaviour
             Debug.LogError("[SwapCard] 请拖入交换触发按钮！");
             return;
         }
+        if (betManager == null) betManager = FindFirstObjectByType<BetManager>();
 
         swapTriggerBtn.onClick.AddListener(ToggleSwapMode);
         SetCardClickable(false);
@@ -59,10 +63,17 @@ public class SwapCardHandPublic : MonoBehaviour
     {
         if (swapTriggerBtn == null || cardDeckSystem == null) return;
 
-        // 按钮启用条件：1. 回合已开始 2. 有手牌 3. 有公牌（可选，根据需求调整）
+        bool costCondition = true;
+        if (betManager != null)
+        {
+            costCondition = betManager.playerChips >= betManager.costSwapCard;
+        }
+
+        // 按钮启用条件：1. 回合已开始 2. 有手牌 3. 有公牌（可选，根据需求调整） 4. 筹码足够
         swapTriggerBtn.interactable = cardDeckSystem.IsInRound
                                    && cardDeckSystem.PlayerCardCount > 0
-                                   && cardDeckSystem.PublicCardObjects.Count > 0;
+                                   && cardDeckSystem.PublicCardObjects.Count > 0
+                                   && costCondition;
     }
 
     /// <summary>
@@ -110,7 +121,8 @@ public class SwapCardHandPublic : MonoBehaviour
         {
             ResetSelectState();
             SetCardClickable(true);
-            Debug.Log("[SwapCard] 进入交换模式：先选手牌，再选公牌");
+            int cost = betManager != null ? betManager.costSwapCard : 0;
+            Debug.Log($"[SwapCard] 进入交换模式：需要消耗 {cost} 筹码。先选手牌，再选公牌");
         }
         else
         {
@@ -205,6 +217,20 @@ public class SwapCardHandPublic : MonoBehaviour
     private void TriggerCardValueSwap()
     {
         if (_isSwapping || _selectedHandCard == null || _selectedPublicCard == null) return;
+        
+        // ========== Cost Check ==========
+        if (betManager != null)
+        {
+            if (!betManager.TrySpendChips(betManager.costSwapCard))
+            {
+                Debug.LogWarning($"筹码不足！无法交换卡牌。需要: {betManager.costSwapCard}");
+                // Optionally reset selection or exit mode
+                ResetSelectState();
+                ToggleSwapMode(); // Exit mode
+                return;
+            }
+        }
+        // ================================
 
         _isSwapping = true;
         Debug.Log("[SwapCard] 开始交换数值...");

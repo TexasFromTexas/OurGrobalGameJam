@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using BetSystem; // Added namespace
 
 /// <summary>
 /// 独立的抽牌按钮脚本：点击按钮给玩家抽1张牌
@@ -11,6 +12,8 @@ public class DrawOneCardButton : MonoBehaviour
     public CardDeckSystem cardDeckSystem;
     // 抽牌按钮（在Inspector中拖入你的抽牌按钮）
     public Button drawOneCardBtn;
+
+    public BetManager betManager;
 
     private void Start()
     {
@@ -25,6 +28,8 @@ public class DrawOneCardButton : MonoBehaviour
             Debug.LogError("请给DrawOneCardButton脚本的drawOneCardBtn字段拖入抽牌按钮！");
             return;
         }
+
+        if (betManager == null) betManager = FindFirstObjectByType<BetManager>();
 
         // 绑定按钮点击事件：点击就抽1张牌
         drawOneCardBtn.onClick.AddListener(OnClickDrawOneCard);
@@ -44,8 +49,17 @@ public class DrawOneCardButton : MonoBehaviour
     private void UpdateButtonInteractable()
     {
         if (cardDeckSystem == null || drawOneCardBtn == null) return;
+        
+        bool costCondition = true;
+        if (betManager != null)
+        {
+            costCondition = betManager.playerChips >= betManager.costDrawCard;
+        }
+
         // 只有回合中且牌库不为空时，按钮才可用
-        drawOneCardBtn.interactable = cardDeckSystem.IsInRound && cardDeckSystem.GetComponent<CardDeckSystem>().cardDeck.Count > 0;
+        drawOneCardBtn.interactable = cardDeckSystem.IsInRound 
+                                   && cardDeckSystem.GetComponent<CardDeckSystem>().cardDeck.Count > 0
+                                   && costCondition;
     }
 
     /// <summary>
@@ -53,6 +67,16 @@ public class DrawOneCardButton : MonoBehaviour
     /// </summary>
     private void OnClickDrawOneCard()
     {
+        // Cost Check
+        if (betManager != null)
+        {
+            if (!betManager.TrySpendChips(betManager.costDrawCard))
+            {
+                Debug.LogWarning($"筹码不足！无法抽牌。需要: {betManager.costDrawCard}");
+                return;
+            }
+        }
+
         PlayingCard newCard = cardDeckSystem.DrawOneCardToPlayerHand();
         // 可选：抽牌后的额外逻辑（比如提示玩家）
         if (newCard != null)
