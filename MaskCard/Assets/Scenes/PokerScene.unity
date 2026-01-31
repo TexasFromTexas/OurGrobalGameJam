@@ -1964,6 +1964,7 @@ MonoBehaviour:
   cardDeckSystem: {fileID: 752966010}
   deleteCardBtn: {fileID: 773862647}
   betManager: {fileID: 0}
+  dissolveDuration: 1.2
 --- !u!114 &714463195
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1994,6 +1995,7 @@ MonoBehaviour:
   addPublicCardBtn: {fileID: 1160853776}
   peekCardScript: {fileID: 0}
   betManager: {fileID: 0}
+  mouseAction: {fileID: 0}
 --- !u!114 &714463197
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2010,6 +2012,7 @@ MonoBehaviour:
   peekBtn: {fileID: 1083290402}
   peekCardOverlayPrefab: {fileID: 4132936062147507488, guid: 6aad0ce723de00842b17b02301b2bd04, type: 3}
   betManager: {fileID: 0}
+  mouseAction: {fileID: 0}
   peekOffset: {x: -10, y: 10}
   peekAlpha: 0.577
 --- !u!114 &714463198
@@ -2031,6 +2034,7 @@ MonoBehaviour:
   _isSwapMode: 0
   _selectedHandCard: {fileID: 0}
   _selectedPublicCard: {fileID: 0}
+  mouseAction: {fileID: 0}
 --- !u!1 &728558289
 GameObject:
   m_ObjectHideFlags: 0
@@ -3078,6 +3082,7 @@ MonoBehaviour:
   enemyActedThisPhase: 0
   isSettlementLocked: 0
   isAllIn: 0
+  turnState: 0
   onChipsNegative:
     m_PersistentCalls:
       m_Calls: []
@@ -3099,7 +3104,6 @@ MonoBehaviour:
   onAllIn:
     m_PersistentCalls:
       m_Calls: []
-  isPlayerTurn: 0
 --- !u!4 &1230495075
 Transform:
   m_ObjectHideFlags: 0
@@ -3957,7 +3961,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -4289,7 +4293,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -4691,6 +4695,74 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!1 &1791984531
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1791984533}
+  - component: {fileID: 1791984532}
+  - component: {fileID: 1791984534}
+  m_Layer: 0
+  m_Name: MouseAbout
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1791984532
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1791984531}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d9917f0b53093347a8048b1eda8ccda, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  backgroundLayer: {fileID: 405962569}
+  bossLayer: {fileID: 821096584}
+  cardsLayer: {fileID: 1308663738}
+  mouseSensitivity: 0.5
+  backLayerMultiplier: 1
+  bossLayerMultiplier: 0.6
+  cardsLayerMultiplier: 0.3
+  smoothSpeed: 5
+  leftBoundary: -200
+  rightBoundary: 200
+--- !u!4 &1791984533
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1791984531}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1.1825619, y: 0.1040589, z: 10}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1791984534
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1791984531}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ca2c3301f8b99640a9c9ca752e86039, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  canvas_ButArea: {fileID: 7833214079447944399, guid: 6b6880de15ceddb43ba315af2ba73520, type: 3}
 --- !u!1 &1797820301
 GameObject:
   m_ObjectHideFlags: 0
@@ -4942,7 +5014,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -5179,60 +5251,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1965792795}
   m_CullTransparentMesh: 1
---- !u!1 &1983825405
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1983825407}
-  - component: {fileID: 1983825406}
-  m_Layer: 0
-  m_Name: SmoothParallaxMouseEffect
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1983825406
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1983825405}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0d9917f0b53093347a8048b1eda8ccda, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  backgroundLayer: {fileID: 405962569}
-  bossLayer: {fileID: 821096584}
-  cardsLayer: {fileID: 1308663738}
-  mouseSensitivity: 0.5
-  backLayerMultiplier: 1
-  bossLayerMultiplier: 0.6
-  cardsLayerMultiplier: 0.3
-  smoothSpeed: 5
-  leftBoundary: -200
-  rightBoundary: 200
---- !u!4 &1983825407
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1983825405}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 967.797, y: 606.40796, z: -9.719998}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2023073322
 GameObject:
   m_ObjectHideFlags: 0
@@ -5701,4 +5719,4 @@ SceneRoots:
   - {fileID: 1230495075}
   - {fileID: 405962569}
   - {fileID: 821096584}
-  - {fileID: 1983825407}
+  - {fileID: 1791984533}

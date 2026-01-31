@@ -23,6 +23,8 @@ public class SwapCardHandPublic : MonoBehaviour
     private bool _isSwapping = false;
     private Color _originHandCardColor;
 
+    public MouseAction mouseAction;
+
     // 只读特性
     public class ReadOnlyAttribute : PropertyAttribute { }
 
@@ -39,8 +41,9 @@ public class SwapCardHandPublic : MonoBehaviour
             return;
         }
         if (betManager == null) betManager = FindFirstObjectByType<BetManager>();
+        mouseAction= FindFirstObjectByType<MouseAction>();
 
-        swapTriggerBtn.onClick.AddListener(ToggleSwapMode);
+        swapTriggerBtn.onClick.AddListener(()=>StartCoroutine(mouseAction.BeginUseMask(swapTriggerBtn.gameObject,()=>ToggleSwapMode())));
         SetCardClickable(false);
         UpdateSwapButtonText();
         // ========== 新增：初始化按钮可交互状态（回合未开始则禁用） ==========
@@ -55,6 +58,7 @@ public class SwapCardHandPublic : MonoBehaviour
     {
         UpdateSwapButtonInteractable();
     }
+
 
     /// <summary>
     /// 核心新增：控制交换按钮仅在回合开始后启用
