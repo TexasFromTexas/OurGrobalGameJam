@@ -30,6 +30,9 @@ namespace BetSystem
                 betManager.onChipsNegative.AddListener(RevealAllCommunityCards);
                 betManager.onPhaseChanged.AddListener(OnPhaseChanged);
                 betManager.onNewRoundStarted.AddListener(OnBettingRoundRestarted);
+                
+                // NEW: Listen to Fold to intercept with Joker logic
+                betManager.onFold.AddListener(OnFold);
             }
         }
 
@@ -139,6 +142,18 @@ namespace BetSystem
                     RevealAllCommunityCards();
                     PerformShowdown();
                     break;
+            }
+        }
+        
+        // NEW: Intercept Fold
+        private void OnFold(bool isPlayerFolded)
+        {
+            // If there is a Public Joker revealed, we must trigger the event INSTEAD of standard Fold Loss.
+            if (cardDeckSystem != null && HasRevealedJoker(cardDeckSystem.PublicCardObjects))
+            {
+                 Debug.Log("[Bridge] Fold Intercepted! Public Joker found on table.");
+                 betManager.isSettlementLocked = true;
+                 onPublicJokerRevealed?.Invoke();
             }
         }
 
