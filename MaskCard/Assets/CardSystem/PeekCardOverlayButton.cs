@@ -72,17 +72,7 @@ public class PeekCardOverlayButton : MonoBehaviour
 
         peekBtn.interactable = isInRound && hasPeekableCards && costCondition;
 
-<<<<<<< Updated upstream
-=======
-        // 文本切换（保留你的逻辑）
-        // 文本切换（已移除，无需检测Text组件）
-        /*
->>>>>>> Stashed changes
-        Text btnText = peekBtn.GetComponentInChildren<Text>();
-        if (btnText != null)
-        {
-            btnText.text = _isPeeking ? "摘下面具" : "露出狡诈的样子";
-        }
+
     }
 
     private bool HasPeekableCards()
