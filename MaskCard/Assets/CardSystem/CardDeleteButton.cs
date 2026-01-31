@@ -119,22 +119,46 @@ public class CardDeleteButton : MonoBehaviour
     {
         if (_selectedHandCard == null || _selectedPublicCard == null || cardDeckSystem == null) return;
 
-        if (cardDeckSystem.playerCardObjects.Contains(_selectedHandCard))
+        // ========== 处理手牌：先判断是否为鬼牌 ==========
+        CardDisplay handCardDisplay = _selectedHandCard.GetComponent<CardDisplay>();
+        if (handCardDisplay != null && handCardDisplay.cardData != null && handCardDisplay.cardData.rank == CardRank.Joker)
         {
-            cardDeckSystem.RemovePlayerCard(_selectedHandCard);
-            Debug.Log($"删除手牌：{_selectedHandCard.GetComponent<CardDisplay>().cardData.cardName}");
+            // 手牌是鬼牌：洗回牌堆，不删除
+            cardDeckSystem.ReturnJokerToDeck(_selectedHandCard, cardDeckSystem.playerCardObjects);
+            Debug.Log("选中的手牌是鬼牌，已洗回牌堆");
+        }
+        else
+        {
+            // 非鬼牌：正常删除
+            if (cardDeckSystem.playerCardObjects.Contains(_selectedHandCard))
+            {
+                cardDeckSystem.RemovePlayerCard(_selectedHandCard);
+                Debug.Log($"删除手牌：{_selectedHandCard.GetComponent<CardDisplay>().cardData.cardName}");
+            }
         }
 
-        if (cardDeckSystem.PublicCardObjects.Contains(_selectedPublicCard))
+        // ========== 处理公牌：先判断是否为鬼牌 ==========
+        CardDisplay publicCardDisplay = _selectedPublicCard.GetComponent<CardDisplay>();
+        if (publicCardDisplay != null && publicCardDisplay.cardData != null && publicCardDisplay.cardData.rank == CardRank.Joker)
         {
-            cardDeckSystem.RemovePublicCard(_selectedPublicCard);
-            Debug.Log($"删除公牌（已翻开）：{_selectedPublicCard.GetComponent<CardDisplay>().cardData.cardName}");
+            // 公牌是鬼牌：洗回牌堆，不删除
+            cardDeckSystem.ReturnJokerToDeck(_selectedPublicCard, cardDeckSystem.PublicCardObjects);
+            Debug.Log("选中的公牌是鬼牌，已洗回牌堆");
+        }
+        else
+        {
+            // 非鬼牌：正常删除
+            if (cardDeckSystem.PublicCardObjects.Contains(_selectedPublicCard))
+            {
+                cardDeckSystem.RemovePublicCard(_selectedPublicCard);
+                Debug.Log($"删除公牌（已翻开）：{_selectedPublicCard.GetComponent<CardDisplay>().cardData.cardName}");
+            }
         }
 
         cardDeckSystem.RearrangePlayerHand();
         ExitDeleteMode();
         if (deleteCardBtn != null) deleteCardBtn.GetComponentInChildren<Text>().text = "表现生气的样子";
-        Debug.Log($"删除完成！剩余手牌：{cardDeckSystem.PlayerCardCount}，剩余公牌：{cardDeckSystem.PublicCardObjects.Count}");
+        Debug.Log($"操作完成！剩余手牌：{cardDeckSystem.PlayerCardCount}，剩余公牌：{cardDeckSystem.PublicCardObjects.Count}");
     }
     #endregion
 

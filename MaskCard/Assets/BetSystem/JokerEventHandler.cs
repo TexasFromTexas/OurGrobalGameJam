@@ -245,11 +245,16 @@ namespace BetSystem
         /// </summary>
         private void DeleteAllCardsOnField()
         {
-            DeleteCardList(cardDeckSystem.playerCardObjects, "玩家手牌");
-            DeleteCardList(cardDeckSystem.enemyCardObjects, "敌人手牌");
-            DeleteCardList(cardDeckSystem.PublicCardObjects, "公牌（含额外添加）");
+            if (cardDeckSystem == null) return;
 
-            Debug.Log("[JokerEventHandler] 所有牌已删除！");
+            // 处理玩家手牌（鬼牌洗回，非鬼牌删除）
+            cardDeckSystem.ProcessCards_JokerReturnToDeck(cardDeckSystem.playerCardObjects, "玩家手牌");
+            // 处理敌人手牌（鬼牌洗回，非鬼牌删除）
+            cardDeckSystem.ProcessCards_JokerReturnToDeck(cardDeckSystem.enemyCardObjects, "敌人手牌");
+            // 处理公牌（鬼牌洗回，非鬼牌删除）
+            cardDeckSystem.ProcessCards_JokerReturnToDeck(cardDeckSystem.PublicCardObjects, "公牌");
+
+            Debug.Log("[JokerEventHandler] 所有牌处理完成：鬼牌洗回牌堆，非鬼牌已删除！");
         }
 
         /// <summary>

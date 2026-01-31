@@ -287,6 +287,81 @@ public class CardDeckSystem : MonoBehaviour
 
         return true;
     }
+    // ========== 新增：鬼牌洗回牌堆核心方法 ==========
+    /// <summary>
+    /// 将单张卡牌数据洗回牌堆（通用方法）
+    /// </summary>
+    /// <param name="cardData">要洗回的卡牌数据</param>
+    public void AddCardBackToDeck(PlayingCard cardData)
+    {
+        if (cardData == null) return;
+
+        // 将卡牌数据添加回牌库
+        cardDeck.Add(cardData);
+        // 重新洗牌
+        ShuffleDeck(ref cardDeck);
+        Debug.Log($"卡牌【{cardData.cardName}】已洗回牌堆，当前牌库数量：{cardDeck.Count}");
+    }
+
+    /// <summary>
+    /// 处理鬼牌：移除列表、销毁物体、将数据洗回牌堆
+    /// </summary>
+    /// <param name="cardObj">鬼牌物体</param>
+    /// <param name="cardList">卡牌所属列表（手牌/公牌）</param>
+    public void ReturnJokerToDeck(GameObject cardObj, List<GameObject> cardList)
+    {
+        if (cardObj == null || cardList == null) return;
+
+        // 获取卡牌数据
+        CardDisplay cardDisplay = cardObj.GetComponent<CardDisplay>();
+        if (cardDisplay == null || cardDisplay.cardData == null)
+        {
+            Debug.LogWarning("卡牌缺少数据，无法洗回牌堆");
+            return;
+        }
+
+        // 1. 将鬼牌数据洗回牌堆
+        AddCardBackToDeck(cardDisplay.cardData);
+        // 2. 从列表移除（避免重复处理）
+        cardList.Remove(cardObj);
+        // 3. 销毁卡牌物体（仅销毁UI，数据已保留）
+        Destroy(cardObj);
+        Debug.Log($"鬼牌【{cardDisplay.cardData.cardName}】已洗回牌堆，销毁UI物体");
+    }
+
+    /// <summary>
+    /// 批量处理卡牌：鬼牌洗回牌堆，非鬼牌直接删除
+    /// </summary>
+    /// <param name="cardList">待处理卡牌列表</param>
+    /// <param name="cardType">卡牌类型（用于日志）</param>
+    public void ProcessCards_JokerReturnToDeck(List<GameObject> cardList, string cardType)
+    {
+        if (cardList == null || cardList.Count == 0) return;
+
+        // 临时列表避免遍历中修改原列表
+        List<GameObject> tempList = new List<GameObject>(cardList);
+        foreach (GameObject card in tempList)
+        {
+            if (card == null) continue;
+
+            CardDisplay display = card.GetComponent<CardDisplay>();
+            if (display != null && display.cardData != null && display.cardData.rank == CardRank.Joker)
+            {
+                // 鬼牌：洗回牌堆
+                ReturnJokerToDeck(card, cardList);
+            }
+            else
+            {
+                // 非鬼牌：直接删除
+                if (cardList.Contains(card))
+                {
+                    cardList.Remove(card);
+                    Destroy(card);
+                }
+            }
+        }
+        Debug.Log($"处理{cardType}完成：鬼牌洗回牌堆，非鬼牌已删除，剩余数量：{cardList.Count}");
+    }
 
     public void SpawnSingleCard(PlayingCard cardData, Transform parentArea, ref List<GameObject> cardList)
     {
@@ -423,6 +498,44 @@ public class CardDeckSystem : MonoBehaviour
     public event Action<GameObject> OnPublicCardRemoved;
 
     // 在RemovePublicCard方法中触发事件
+    // ========== 新增：将公牌洗回牌堆（替代删除） ==========
+    /// <summary>
+    /// 将指定公牌洗回牌堆（不删除数据，仅销毁物体）
+    /// </summary>
+    /// <param name="publicCard">要洗回的公牌物体</param>
+    public void ReturnPublicCardToDeck(GameObject publicCard)
+    {
+        if (publicCard == null || !PublicCardObjects.Contains(publicCard))
+        {
+            Debug.LogWarning("公牌不存在，无法洗回牌堆！");
+            return;
+        }
+
+        // 1. 获取公牌的卡牌数据
+        CardDisplay cardDisplay = publicCard.GetComponent<CardDisplay>();
+        if (cardDisplay == null || cardDisplay.cardData == null)
+        {
+            Debug.LogError("公牌缺少CardDisplay组件或卡牌数据，洗回失败！");
+            return;
+        }
+
+        // 2. 将卡牌数据放回牌库
+        cardDeck.Add(cardDisplay.cardData);
+        Debug.Log($"公牌【{cardDisplay.cardData.cardName}】已放回牌库，牌库当前数量：{cardDeck.Count}");
+
+        // 3. 从公牌列表移除并销毁物体
+        PublicCardObjects.Remove(publicCard);
+        Destroy(publicCard);
+
+        // 4. 重新洗牌（保证牌库随机性）
+        ShuffleDeck(ref cardDeck);
+
+        // 5. 重新排列剩余公牌
+        RearrangePublicCards();
+
+        // 触发公牌移除事件（兼容原有逻辑）
+        OnPublicCardRemoved?.Invoke(publicCard);
+    }
     public void RemovePublicCard(GameObject publicCard)
     {
         if (PublicCardObjects.Contains(publicCard))
