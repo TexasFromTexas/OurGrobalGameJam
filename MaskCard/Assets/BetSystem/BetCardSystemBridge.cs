@@ -1,6 +1,7 @@
 using UnityEngine;
+using UnityEngine.Events;
 using System.Collections.Generic;
-using System.Linq; // Added for Linq
+using System.Linq; 
 
 namespace BetSystem
 {
@@ -8,6 +9,10 @@ namespace BetSystem
     {
         public BetManager betManager;
         public CardDeckSystem cardDeckSystem;
+
+        [Header("Joker Logic")]
+        public bool stopShowdownIfJokerFound = true; 
+        public UnityEvent<bool, bool> onJokerDetected; // (hasPlayerJoker, hasEnemyJoker)
 
         private void Start()
         {
@@ -19,27 +24,34 @@ namespace BetSystem
                 betManager.onChipsNegative.AddListener(RevealAllCommunityCards);
                 betManager.onPhaseChanged.AddListener(OnPhaseChanged);
                 betManager.onNewRoundStarted.AddListener(OnBettingRoundRestarted);
+                
+                // NEW: Listen for Fold to check Jokers
+                betManager.onFold.AddListener(OnFoldCheckJokers);
             }
+        }
+
+        private void OnFoldCheckJokers(bool isPlayerFolded)
+        {
+            // When someone folds, we check for *revealed* Jokers immediately.
+            // Note: Hand cards of the folder are likely hidden. Public cards might be revealed.
+            CheckAndTriggerJokerLogic(true); 
+            // 'true' here means we want to lock settlement if found. 
+            // If Check returns true (Joker found), it handles the locking.
         }
 
         private void OnBettingRoundRestarted()
         {
             if (cardDeckSystem == null) return;
-
             if (cardDeckSystem.IsInRound)
             {
-                if (cardDeckSystem.endRoundButton != null && cardDeckSystem.endRoundButton.interactable)
-                {
+                if (cardDeckSystem.endRoundButton && cardDeckSystem.endRoundButton.interactable)
                     cardDeckSystem.endRoundButton.onClick.Invoke();
-                }
             }
 
-            if (cardDeckSystem.startRoundButton != null)
+            if (cardDeckSystem.startRoundButton)
             {
                 if (cardDeckSystem.startRoundButton.interactable)
-                {
                     cardDeckSystem.startRoundButton.onClick.Invoke();
-                }
             }
         }
 
@@ -47,8 +59,6 @@ namespace BetSystem
         {
             switch (phase)
             {
-                case BetPhase.Preflop:
-                    break;
                 case BetPhase.Flop:
                     RevealCommunityCards(3);
                     break;
@@ -69,24 +79,27 @@ namespace BetSystem
         {
             if (cardDeckSystem == null) return;
 
-            // 1. Collect all cards
-            List<PlayingCard> playerHand = GetCardsFromObjects(cardDeckSystem.playerCardObjects);
-            List<PlayingCard> publicCards = GetCardsFromObjects(cardDeckSystem.PublicCardObjects);
-            
-            // Enemy cards are private, so we fetch from the UI container
-            List<PlayingCard> enemyHand = GetCardsFromTransform(cardDeckSystem.enemyHandArea);
-
-            // 2. Reveal Enemy Cards
+            // 1. Reveal Enemy Cards (Showdown always reveals all)
             RevealCardsInTransform(cardDeckSystem.enemyHandArea);
 
-            // 3. Prepare full hands
+            // 2. Check for Jokers (Showdown means everything is revealed, so we can check everything)
+            // Note: Since we just called RevealCardsInTransform, they are now "revealed".
+            bool jokerFound = CheckAndTriggerJokerLogic(stopShowdownIfJokerFound);
+            
+            if (jokerFound && stopShowdownIfJokerFound)
+            {
+                return; // Stop standard Judge
+            }
+
+            // 3. Collect cards for Judge
+            List<PlayingCard> playerHand = GetCardsFromObjects(cardDeckSystem.playerCardObjects);
+            List<PlayingCard> publicCards = GetCardsFromObjects(cardDeckSystem.PublicCardObjects);
+            List<PlayingCard> enemyHand = GetCardsFromTransform(cardDeckSystem.enemyHandArea);
+
             List<PlayingCard> playerFullHand = new List<PlayingCard>(playerHand);
             playerFullHand.AddRange(publicCards);
-
             List<PlayingCard> enemyFullHand = new List<PlayingCard>(enemyHand);
             enemyFullHand.AddRange(publicCards);
-
-            Debug.Log($"Showdown! Player Hand: {playerHand.Count}, Enemy Hand: {enemyHand.Count}, Public: {publicCards.Count}");
 
             // 4. Call Judge Logic
             if (Judge.Instance != null)
@@ -97,84 +110,108 @@ namespace BetSystem
                 PokerHandType eType;
                 bool playerWins;
 
-                Judge.Instance.GetResult(
-                    playerFullHand, 
-                    enemyFullHand, 
-                    out pBest, 
-                    out pType, 
-                    out eBest, 
-                    out eType, 
-                    out playerWins
-                );
+                Judge.Instance.GetResult(playerFullHand, enemyFullHand, out pBest, out pType, out eBest, out eType, out playerWins);
 
-                Debug.Log($"Judge Result: Player Type: {pType}, Enemy Type: {eType}. Player Wins? {playerWins}");
-
-                // 5. Trigger Win/Loss
-                // Note: Judge returns true for Win OR Tie (CompareHands >= 0). 
-                // If strictly tie logic is needed, we would verify CompareHands result directly, 
-                // but for now we give ties to Player based on ">= 0" logic in Judge.GetResult.
-                if (playerWins)
-                {
-                    betManager.PlayerWin();
-                }
-                else
-                {
-                    betManager.EnemyWin();
-                }
-            }
-            else
-            {
-                Debug.LogError("Judge.Instance is null! Cannot perform showdown.");
+                if (playerWins) betManager.PlayerWin();
+                else betManager.EnemyWin();
             }
         }
 
-        private List<PlayingCard> GetCardsFromObjects(List<GameObject> cardObjs)
+        /// <summary>
+        /// Checks all cards in play. Returns true if a REVEALED Joker is found.
+        /// If found and shouldLock is true, locks the BetManager settlement.
+        /// </summary>
+        private bool CheckAndTriggerJokerLogic(bool shouldLock)
         {
-            List<PlayingCard> result = new List<PlayingCard>();
-            if (cardObjs == null) return result;
+            if (cardDeckSystem == null) return false;
 
-            foreach (var go in cardObjs)
+            bool playerHasRevealedJoker = HasRevealedJoker(cardDeckSystem.playerCardObjects);
+            bool publicHasRevealedJoker = HasRevealedJoker(cardDeckSystem.PublicCardObjects);
+            bool enemyHasRevealedJoker = HasRevealedJoker(cardDeckSystem.enemyCardObjects); // Uses list directly if available, or helper
+
+            // Note: enemyCardObjects logic in CardDeckSystem might not be exposed as a public list if private. 
+            // In CardDeckSystem.cs it is private List<GameObject> enemyCardObjects. 
+            // But we can get them via Transform if needed.
+            if (cardDeckSystem.enemyHandArea != null)
             {
-                if (go == null) continue;
-                CardDisplay display = go.GetComponent<CardDisplay>();
-                if (display != null && display.cardData != null)
-                {
-                    result.Add(display.cardData);
-                }
+                 // Re-check via transform to be safe if list is private/empty
+                 enemyHasRevealedJoker = HasRevealedJokerInTransform(cardDeckSystem.enemyHandArea);
             }
-            return result;
+
+            // Determine ownership for the event
+            // Public Joker counts for... both? or triggers event with true, true? 
+            // Usually Joker ownership matters. If Public has it, both "have" it in a sense.
+            // Let's pass: 
+            // PlayerParam = PlayerHandHas OR PublicHas
+            // EnemyParam = EnemyHandHas OR PublicHas
+            
+            bool pEvent = playerHasRevealedJoker || publicHasRevealedJoker;
+            bool eEvent = enemyHasRevealedJoker || publicHasRevealedJoker;
+
+            if (pEvent || eEvent)
+            {
+                Debug.Log($"Revealed Joker Detected! P:{pEvent}, E:{eEvent}");
+                
+                if (shouldLock)
+                {
+                    betManager.isSettlementLocked = true;
+                }
+                
+                onJokerDetected?.Invoke(pEvent, eEvent);
+                return true;
+            }
+
+            return false;
         }
 
-        private List<PlayingCard> GetCardsFromTransform(Transform parent)
+        private bool HasRevealedJoker(List<GameObject> cards)
         {
-            List<PlayingCard> result = new List<PlayingCard>();
-            if (parent == null) return result;
-
-            CardDisplay[] displays = parent.GetComponentsInChildren<CardDisplay>();
-            foreach (var d in displays)
+            if (cards == null) return false;
+            foreach (var go in cards)
             {
-                if (d != null && d.cardData != null)
-                {
-                    result.Add(d.cardData);
-                }
+                if (IsJokerAndRevealed(go)) return true;
             }
-            return result;
+            return false;
         }
 
+        private bool HasRevealedJokerInTransform(Transform parent)
+        {
+            if (parent == null) return false;
+            foreach (Transform t in parent)
+            {
+                if (IsJokerAndRevealed(t.gameObject)) return true;
+            }
+            return false;
+        }
+
+        private bool IsJokerAndRevealed(GameObject go)
+        {
+            if (go == null) return false;
+
+            CardDisplay display = go.GetComponent<CardDisplay>();
+            CardFaceController face = go.GetComponent<CardFaceController>();
+
+            if (display != null && face != null)
+            {
+                bool isJoker = display.cardData != null && display.cardData.rank == CardRank.Joker;
+                bool isRevealed = !face._isShowingBack; // _isShowingBack is public per previous view
+
+                return isJoker && isRevealed;
+            }
+            return false;
+        }
+
+        // Helpers
         private void RevealCardsInTransform(Transform parent)
         {
             if (parent == null) return;
             CardFaceController[] faces = parent.GetComponentsInChildren<CardFaceController>();
-            foreach (var f in faces)
-            {
-                f.ShowFrontFace();
-            }
+            foreach (var f in faces) f.ShowFrontFace();
         }
 
         public void RevealCommunityCards(int totalToReveal)
         {
             if (cardDeckSystem == null) return;
-
             List<GameObject> publicCards = cardDeckSystem.PublicCardObjects;
             if (publicCards == null) return;
 
@@ -187,10 +224,16 @@ namespace BetSystem
                 }
             }
         }
+        
+        public void RevealAllCommunityCards() => RevealCommunityCards(5);
 
-        public void RevealAllCommunityCards()
+        private List<PlayingCard> GetCardsFromObjects(List<GameObject> c) // ... simplified helper
         {
-            RevealCommunityCards(5);
+             return c.Select(x => x.GetComponent<CardDisplay>()?.cardData).Where(d => d != null).ToList();
+        }
+        private List<PlayingCard> GetCardsFromTransform(Transform t)
+        {
+             return t.GetComponentsInChildren<CardDisplay>().Select(x => x.cardData).Where(d => d != null).ToList();
         }
     }
 }

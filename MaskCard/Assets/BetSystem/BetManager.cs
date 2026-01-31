@@ -32,24 +32,29 @@ namespace BetSystem
         public bool playerActedThisPhase;
         public bool enemyActedThisPhase;
 
+        // NEW: Locking mechanism for Joker interception
+        public bool isSettlementLocked = false; 
+
         [Header("Events")]
         public UnityEvent onChipsNegative; 
         public UnityEvent onGameOver;
         public UnityEvent onGameStateChanged;
         public UnityEvent<BetPhase> onPhaseChanged;
-        public UnityEvent onNewRoundStarted; // New Event
+        public UnityEvent onNewRoundStarted;
+        
+        // NEW: Fold event to allow external checks before settlement
+        public UnityEvent<bool> onFold; // param: isPlayerFolded
 
         private IEnumerator Start()
         {
-            // Wait one frame to ensure CardDeckSystem and others are initialized
             yield return null;
-            
             playerChips = initialPlayerChips;
             StartRound();
         }
 
         public void StartRound()
         {
+            isSettlementLocked = false; // Reset lock
             currentPhase = BetPhase.Preflop;
             totalPot = 0;
             currentGlobalStake = initialBet;
@@ -63,7 +68,7 @@ namespace BetSystem
             CheckNegativeChips();
             onGameStateChanged?.Invoke();
             onPhaseChanged?.Invoke(currentPhase);
-            onNewRoundStarted?.Invoke(); // Trigger external systems (Card Redeal)
+            onNewRoundStarted?.Invoke(); 
         }
 
         #region Actions
@@ -117,6 +122,16 @@ namespace BetSystem
 
         private void Fold(bool isPlayer)
         {
+            // Fire event first to allow interception
+            onFold?.Invoke(isPlayer);
+
+            // If an external script (like Bridge) locked the settlement, we stop here.
+            if (isSettlementLocked)
+            {
+                Debug.Log("Fold settlement intercepted/locked by external logic (e.g. Joker).");
+                return;
+            }
+
             if (isPlayer) EnemyWin();
             else PlayerWin();
         }
