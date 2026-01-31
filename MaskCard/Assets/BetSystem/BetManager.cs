@@ -19,6 +19,13 @@ namespace BetSystem
         public int initialPlayerChips = 20;
         public int initialBet = 1;
 
+        [Header("Ability Costs")]
+        public int costDeleteCard = 5;
+        public int costSwapCard = 5;
+        public int costAddPublic = 5;
+        public int costDrawCard = 5;
+        public int costPeekCard = 5;
+
         [Header("State")]
         public int playerChips;
         public int totalPot;
@@ -70,6 +77,25 @@ namespace BetSystem
             onPhaseChanged?.Invoke(currentPhase);
             onNewRoundStarted?.Invoke(); 
         }
+
+        #region Generic Ability API
+        /// <summary>
+        /// Attempts to spend chips. Returns true if successful.
+        /// </summary>
+        /// <param name="amount">Amount to spend</param>
+        /// <returns>True if chips were deducted, False if insufficient funds</returns>
+        public bool TrySpendChips(int amount)
+        {
+            if (playerChips >= amount)
+            {
+                playerChips -= amount;
+                CheckNegativeChips(); 
+                onGameStateChanged?.Invoke();
+                return true;
+            }
+            return false;
+        }
+        #endregion
 
         #region Actions
         public void PlayerRaise() => Raise(true);

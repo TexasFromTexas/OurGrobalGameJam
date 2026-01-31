@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using BetSystem; // Added namespace
 
 /// <summary>
 /// 抽取额外公牌脚本（新增：通知偷看脚本刷新）
@@ -11,6 +12,8 @@ public class AddPublicCardButton : MonoBehaviour
     public Button addPublicCardBtn;
     // 新增：引用偷看脚本
     public PeekCardOverlayButton peekCardScript;
+    
+    public BetManager betManager;
 
     private bool _isClicked = false;
 
@@ -26,6 +29,8 @@ public class AddPublicCardButton : MonoBehaviour
             Debug.LogError("请给AddPublicCardButton拖入多抽公牌按钮！");
             return;
         }
+
+        if (betManager == null) betManager = FindFirstObjectByType<BetManager>();
 
         addPublicCardBtn.onClick.AddListener(OnClickAddPublicCard);
         cardDeckSystem.OnRoundStateChanged += OnRoundStateChanged;
@@ -43,13 +48,21 @@ public class AddPublicCardButton : MonoBehaviour
 
         bool isInRound = cardDeckSystem.IsInRound;
         bool hasCardsInDeck = cardDeckSystem.cardDeck.Count > 0;
-        bool canClick = isInRound && hasCardsInDeck && !_isClicked;
+        
+        bool costCondition = true;
+        if (betManager != null)
+        {
+            costCondition = betManager.playerChips >= betManager.costAddPublic;
+        }
+
+        bool canClick = isInRound && hasCardsInDeck && !_isClicked && costCondition;
 
         addPublicCardBtn.interactable = canClick;
 
         Text btnText = addPublicCardBtn.GetComponentInChildren<Text>();
         if (btnText != null)
         {
+            // Update text to potentially show cost? Or keep original style.
             btnText.text = _isClicked ? "摘下面具" : "装出和善的样子";
         }
         else
@@ -60,6 +73,16 @@ public class AddPublicCardButton : MonoBehaviour
 
     private void OnClickAddPublicCard()
     {
+        // Cost Check
+        if (betManager != null)
+        {
+            if (!betManager.TrySpendChips(betManager.costAddPublic))
+            {
+                Debug.LogWarning($"筹码不足！无法抽取额外公牌。需要: {betManager.costAddPublic}");
+                return;
+            }
+        }
+
         bool success = cardDeckSystem.DrawExtraPublicCard();
         if (success)
         {

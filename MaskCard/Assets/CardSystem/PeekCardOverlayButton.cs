@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using BetSystem; // Added namespace
 
 /// <summary>
 /// 覆盖层偷看公牌脚本（修复：新增公牌后可用）
@@ -11,6 +12,8 @@ public class PeekCardOverlayButton : MonoBehaviour
     public CardDeckSystem cardDeckSystem;
     public Button peekBtn;
     public GameObject peekCardOverlayPrefab;
+
+    public BetManager betManager;
 
     [Header("视觉效果参数（可调整）")]
     public Vector2 peekOffset = new Vector2(0, 10);
@@ -38,6 +41,8 @@ public class PeekCardOverlayButton : MonoBehaviour
             return;
         }
 
+        if (betManager == null) betManager = FindFirstObjectByType<BetManager>();
+
         peekBtn.onClick.AddListener(TogglePeek);
         UpdateButtonState();
     }
@@ -57,7 +62,18 @@ public class PeekCardOverlayButton : MonoBehaviour
         bool isInRound = cardDeckSystem.IsInRound;
         bool hasPeekableCards = HasPeekableCards(); // 修复后的判断逻辑
 
-        peekBtn.interactable = isInRound && hasPeekableCards;
+        bool costCondition = true;
+        if (betManager != null)
+        {
+            // Only require cost if we are NOT currently peeking (i.e. to Start peeking)
+            // If we are already peeking, we can toggle off freely.
+            if (!_isPeeking)
+            {
+                costCondition = betManager.playerChips >= betManager.costPeekCard;
+            }
+        }
+
+        peekBtn.interactable = isInRound && hasPeekableCards && costCondition;
 
         // 文本切换（保留你的逻辑）
         Text btnText = peekBtn.GetComponentInChildren<Text>();
@@ -148,7 +164,23 @@ public class PeekCardOverlayButton : MonoBehaviour
 
     private void TogglePeek()
     {
-        _isPeeking = !_isPeeking;
+        // Toggle Logic
+        bool targetState = !_isPeeking;
+
+        if (targetState) // Want to start peeking
+        {
+            // Cost Check
+            if (betManager != null)
+            {
+                if (!betManager.TrySpendChips(betManager.costPeekCard))
+                {
+                    Debug.LogWarning($"筹码不足！无法偷看。需要: {betManager.costPeekCard}");
+                    return;
+                }
+            }
+        }
+
+        _isPeeking = targetState;
 
         if (_isPeeking)
         {
