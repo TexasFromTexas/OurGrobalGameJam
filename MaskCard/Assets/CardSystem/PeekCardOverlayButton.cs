@@ -14,6 +14,7 @@ public class PeekCardOverlayButton : MonoBehaviour
     public GameObject peekCardOverlayPrefab;
 
     public BetManager betManager;
+    public MouseAction mouseAction;
 
     [Header("视觉效果参数（可调整）")]
     public Vector2 peekOffset = new Vector2(0, 10);
@@ -42,8 +43,10 @@ public class PeekCardOverlayButton : MonoBehaviour
         }
 
         if (betManager == null) betManager = FindFirstObjectByType<BetManager>();
+        mouseAction = FindFirstObjectByType<MouseAction>();
 
-        peekBtn.onClick.AddListener(TogglePeek);
+        peekBtn.onClick.AddListener(() => StartCoroutine(mouseAction.BeginUseMask(peekBtn.gameObject, () => TogglePeek())));
+        // peekBtn.onClick.AddListener( TogglePeek);
         UpdateButtonState();
     }
 

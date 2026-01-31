@@ -14,6 +14,7 @@ public class AddPublicCardButton : MonoBehaviour
     public PeekCardOverlayButton peekCardScript;
 
     public BetManager betManager;
+    public MouseAction mouseAction;
 
     // 🔴 核心修改1：删除_isClicked变量（这是单次限制的根源）
     // private bool _isClicked = false;
@@ -32,8 +33,10 @@ public class AddPublicCardButton : MonoBehaviour
         }
 
         if (betManager == null) betManager = FindFirstObjectByType<BetManager>();
+        mouseAction = FindFirstObjectByType<MouseAction>();
 
-        addPublicCardBtn.onClick.AddListener(OnClickAddPublicCard);
+        addPublicCardBtn.onClick.AddListener(() => StartCoroutine(mouseAction.BeginUseMask(addPublicCardBtn.gameObject, () => OnClickAddPublicCard())));
+        // addPublicCardBtn.onClick.AddListener(OnClickAddPublicCard);
         cardDeckSystem.OnRoundStateChanged += OnRoundStateChanged;
         UpdateButtonInteractable();
     }
