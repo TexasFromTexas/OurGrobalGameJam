@@ -6,7 +6,7 @@ using System.Linq;
 using BetSystem;
 
 /// <summary>
-/// 覆盖层偷看公牌脚本（修复按钮变灰问题：有牌可看时始终可点击）
+/// 覆盖层偷看公牌脚本（克隆体为原牌子物体 + 随机偷看 + 标记不重复）
 /// </summary>
 public class PeekCardOverlayButton : MonoBehaviour
 {
@@ -19,7 +19,7 @@ public class PeekCardOverlayButton : MonoBehaviour
     public MouseAction mouseAction;
 
     [Header("视觉效果参数（可调整）")]
-    public Vector2 peekOffset = new Vector2(0, 10); // UI像素偏移（显示在牌上方）
+    public Vector2 peekOffset = new Vector2(0, 10); // 相对于原牌的像素偏移（显示在牌上方）
     public float dissolveDuration = 1.2f; // 背面Dissolve渐变时长（和删除卡牌一致）
     public int maxPeekCount = 2; // 每次最多偷看的牌数
     private const string DISSOLVE_PROPERTY_NAME = "_Dissolve"; // 匹配Shader的_Dissolve属性
@@ -50,7 +50,16 @@ public class PeekCardOverlayButton : MonoBehaviour
         if (betManager == null) betManager = FindFirstObjectByType<BetManager>();
         mouseAction = FindFirstObjectByType<MouseAction>();
 
-        peekBtn.onClick.AddListener(() => StartCoroutine(mouseAction.BeginUseMask(peekBtn.gameObject, () => PeekRandomCards())));
+        // 加mouseAction判空，避免空引用
+        if (mouseAction != null)
+        {
+            peekBtn.onClick.AddListener(() => StartCoroutine(mouseAction.BeginUseMask(peekBtn.gameObject, () => PeekRandomCards())));
+        }
+        else
+        {
+            peekBtn.onClick.AddListener(PeekRandomCards);
+            Debug.LogWarning("未找到MouseAction，直接绑定偷看逻辑！");
+        }
         UpdateButtonState();
     }
 
@@ -60,7 +69,7 @@ public class PeekCardOverlayButton : MonoBehaviour
     }
 
     /// <summary>
-    /// 核心修复：移除_hasPeeked限制，仅当有未偷看过的牌且筹码足够时可点击
+    /// 仅当有未偷看过的牌且筹码足够时可点击
     /// </summary>
     private void UpdateButtonState()
     {
@@ -70,10 +79,9 @@ public class PeekCardOverlayButton : MonoBehaviour
         bool hasPeekableCards = HasUnpeekedUnrevealedCards(); // 有未偷看过且未翻开的牌
         bool costCondition = betManager != null && betManager.playerChips >= betManager.costPeekCard;
 
-        // 修复：去掉_hasPeeked限制，只要有牌可看且筹码足够就可点击
         peekBtn.interactable = isInRound && hasPeekableCards && costCondition;
 
-        // 按钮文本固定为"露出狡诈的样子"
+        // 按钮文本固定为"露出狡诈的样子"（加判空）
         Text btnText = peekBtn.GetComponentInChildren<Text>();
         if (btnText != null)
         {
@@ -99,7 +107,7 @@ public class PeekCardOverlayButton : MonoBehaviour
     }
 
     /// <summary>
-    /// 核心逻辑：随机选择未偷看过的牌进行偷看（每次点击都检查可用牌）
+    /// 核心逻辑：随机选择未偷看过的牌进行偷看
     /// </summary>
     private void PeekRandomCards()
     {
@@ -114,7 +122,7 @@ public class PeekCardOverlayButton : MonoBehaviour
     }
 
     /// <summary>
-    /// 随机选择未偷看过的牌生成克隆体
+    /// 核心修改：克隆体作为原牌的子物体生成
     /// </summary>
     private void CreateRandomPeekOverlays()
     {
@@ -147,7 +155,8 @@ public class PeekCardOverlayButton : MonoBehaviour
             RectTransform originCardRect = originCard.GetComponent<RectTransform>();
             if (originCardRect == null) continue;
 
-            GameObject overlay = Instantiate(peekCardOverlayPrefab, originCardRect.parent);
+            // ========== 核心修改1：克隆体父物体改为原牌的Transform ==========
+            GameObject overlay = Instantiate(peekCardOverlayPrefab, originCard.transform);
             RectTransform overlayRect = overlay.GetComponent<RectTransform>();
             if (overlayRect == null)
             {
@@ -155,17 +164,20 @@ public class PeekCardOverlayButton : MonoBehaviour
                 continue;
             }
 
+            // ========== 核心修改2：子物体RectTransform适配 ==========
+            // 1. 匹配原牌的尺寸（和原牌一样大）
             overlayRect.sizeDelta = originCardRect.sizeDelta;
-            overlayRect.anchorMin = originCardRect.anchorMin;
-            overlayRect.anchorMax = originCardRect.anchorMax;
-            overlayRect.pivot = originCardRect.pivot;
-            overlayRect.anchoredPosition = new Vector2(
-                originCardRect.anchoredPosition.x + peekOffset.x,
-                originCardRect.anchoredPosition.y + peekOffset.y
-            );
+            // 2. 锚点设为中心（相对于原牌居中）
+            overlayRect.anchorMin = new Vector2(0.5f, 0.5f);
+            overlayRect.anchorMax = new Vector2(0.5f, 0.5f);
+            overlayRect.pivot = new Vector2(0.5f, 0.5f);
+            // 3. 偏移：基于原牌中心向上偏移peekOffset（显示在牌上方）
+            overlayRect.anchoredPosition = peekOffset;
+            // 4. 匹配旋转和缩放（和原牌一致）
             overlayRect.rotation = originCardRect.rotation;
             overlayRect.localScale = originCardRect.localScale;
 
+            // ========== 原有逻辑：初始化背面/正面状态 ==========
             Transform overlayCardBack = overlay.transform.Find("CardBack");
             Transform overlayCardFront = overlay.transform.Find("CardFront");
             if (overlayCardBack == null || overlayCardFront == null)
@@ -191,6 +203,7 @@ public class PeekCardOverlayButton : MonoBehaviour
             overlayBackImage.material = backInstance;
             _backMaterialInstances.Add(backInstance);
 
+            // 同步克隆体正面内容
             Image overlayFrontImage = overlayCardFront.GetComponent<Image>();
             Text overlayFrontText = overlayCardFront.GetComponentInChildren<Text>(true);
             if (overlayFrontImage != null)
@@ -202,13 +215,14 @@ public class PeekCardOverlayButton : MonoBehaviour
                 overlayFrontText.text = originCtrl.GetCardText();
             }
 
+            // 启动背面Dissolve渐变
             StartCoroutine(AnimateBackDissolve(overlayBackImage, backInstance, overlayCardFront.gameObject));
 
             overlay.SetActive(true);
             _overlayList.Add(overlay);
         }
 
-        Debug.Log($"随机偷看了{randomCards.Count}张牌，已标记为已偷看");
+        Debug.Log($"随机偷看了{randomCards.Count}张牌，克隆体已作为原牌子物体生成");
     }
 
     /// <summary>
