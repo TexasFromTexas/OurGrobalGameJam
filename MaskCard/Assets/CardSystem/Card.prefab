@@ -169,6 +169,7 @@ GameObject:
   - component: {fileID: 7912089142229552633}
   - component: {fileID: -4231524252471619799}
   - component: {fileID: 7906025058250874523}
+  - component: {fileID: 5099363247275588510}
   m_Layer: 5
   m_Name: Card
   m_TagString: Untagged
@@ -188,10 +189,10 @@ RectTransform:
   m_LocalScale: {x: 0.5, y: 0.5, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 2342788221967801151}
   - {fileID: 3834601671938374665}
+  - {fileID: 2342788221967801151}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: -179.234, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -1870, y: -1030}
@@ -220,7 +221,10 @@ MonoBehaviour:
   cardBackImage: {fileID: 36304563514720227}
   cardFrontImage: {fileID: 2441366531476425484}
   cardText: {fileID: 0}
-  currentCardState: "\u672A\u521D\u59CB\u5316"
+  cardAnimation: {fileID: 5099363247275588510}
+  flipAnimationName: Flip
+  waitForAnimationFinish: 1
+  currentCardState: "\u6B63\u9762\uFF08\u660E\u724C\uFF09"
   _isShowingBack: 0
   bindingCardData:
     suit: 0
@@ -284,6 +288,22 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!111 &5099363247275588510
+Animation:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4132936062147507488}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Animation: {fileID: 7400000, guid: fd73cda0b22fe6047b66570870f43629, type: 2}
+  m_Animations:
+  - {fileID: 7400000, guid: fd73cda0b22fe6047b66570870f43629, type: 2}
+  m_WrapMode: 0
+  m_PlayAutomatically: 0
+  m_AnimatePhysics: 0
+  m_CullingType: 0
 --- !u!1 &4644222727433691196
 GameObject:
   m_ObjectHideFlags: 0
@@ -309,13 +329,13 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4644222727433691196}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0.010915976, z: -0, w: 0.99994045}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 9060203066925181435}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: -1.251, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
@@ -341,7 +361,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Material: {fileID: 2100000, guid: 6c4165c4bce1a014c95d5e088932ed31, type: 2}
+  m_Material: {fileID: 2100000, guid: 6b6528e4318cd4d4388b17dca2e00b51, type: 2}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
