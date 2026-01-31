@@ -1,26 +1,29 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
-using BetSystem; // Added namespace
+using System.Collections;
+using BetSystem;
 
 /// <summary>
-/// 覆盖层偷看公牌脚本（修复：新增公牌后可用）
+/// 覆盖层偷看公牌脚本（全新逻辑：克隆体背面Dissolve渐变消失，露出正面）
 /// </summary>
 public class PeekCardOverlayButton : MonoBehaviour
 {
     [Header("核心引用")]
     public CardDeckSystem cardDeckSystem;
     public Button peekBtn;
-    public GameObject peekCardOverlayPrefab;
+    public GameObject peekCardOverlayPrefab; // 需和原卡牌结构一致（包含CardBack/CardFront）
 
     public BetManager betManager;
     public MouseAction mouseAction;
 
     [Header("视觉效果参数（可调整）")]
-    public Vector2 peekOffset = new Vector2(0, 10);
-    [Range(0.5f, 1f)] public float peekAlpha = 0.8f;
+    public Vector2 peekOffset = new Vector2(0, 10); // UI像素偏移（显示在牌上方）
+    public float dissolveDuration = 1.2f; // 背面Dissolve渐变时长（和删除卡牌一致）
+    private const string DISSOLVE_PROPERTY_NAME = "_Dissolve"; // 匹配Shader的_Dissolve属性
 
     private List<GameObject> _overlayList = new List<GameObject>();
+    private List<Material> _backMaterialInstances = new List<Material>(); // 保存克隆体背面材质实例
     private bool _isPeeking = false;
 
     private void Start()
@@ -46,7 +49,6 @@ public class PeekCardOverlayButton : MonoBehaviour
         mouseAction = FindFirstObjectByType<MouseAction>();
 
         peekBtn.onClick.AddListener(() => StartCoroutine(mouseAction.BeginUseMask(peekBtn.gameObject, () => TogglePeek())));
-        // peekBtn.onClick.AddListener( TogglePeek);
         UpdateButtonState();
     }
 
@@ -55,61 +57,40 @@ public class PeekCardOverlayButton : MonoBehaviour
         UpdateButtonState();
     }
 
-    /// <summary>
-    /// 核心修复：更新按钮状态（补全逻辑漏洞）
-    /// </summary>
     private void UpdateButtonState()
     {
         if (cardDeckSystem == null || peekBtn == null) return;
 
         bool isInRound = cardDeckSystem.IsInRound;
-        bool hasPeekableCards = HasPeekableCards(); // 修复后的判断逻辑
-
+        bool hasPeekableCards = HasPeekableCards();
         bool costCondition = true;
-        if (betManager != null)
+
+        if (betManager != null && !_isPeeking)
         {
-            // Only require cost if we are NOT currently peeking (i.e. to Start peeking)
-            // If we are already peeking, we can toggle off freely.
-            if (!_isPeeking)
-            {
-                costCondition = betManager.playerChips >= betManager.costPeekCard;
-            }
+            costCondition = betManager.playerChips >= betManager.costPeekCard;
         }
 
         peekBtn.interactable = isInRound && hasPeekableCards && costCondition;
 
-        // 文本切换（保留你的逻辑）
         Text btnText = peekBtn.GetComponentInChildren<Text>();
         if (btnText != null)
         {
             btnText.text = _isPeeking ? "摘下面具" : "露出狡诈的样子";
         }
-        else
-        {
-            Debug.LogWarning("偷看按钮缺少Text子组件！");
-        }
     }
 
-    /// <summary>
-    /// 核心修复：重构“是否有可偷看牌”的判断逻辑
-    /// 支持两种场景：1.有已翻开牌且后面有未翻开牌 2.无已翻开牌但有未翻开牌
-    /// </summary>
     private bool HasPeekableCards()
     {
         List<GameObject> publicCards = cardDeckSystem.PublicCardObjects;
         if (publicCards == null || publicCards.Count == 0) return false;
 
         int lastRevealedIndex = GetLastRevealedCardIndex();
-        bool hasUnrevealedAfter = lastRevealedIndex < publicCards.Count - 1; // 已翻开牌后有未翻开牌
-        bool hasAnyUnrevealed = HasAnyUnrevealedCards(); // 有任意未翻开牌
+        bool hasUnrevealedAfter = lastRevealedIndex < publicCards.Count - 1;
+        bool hasAnyUnrevealed = HasAnyUnrevealedCards();
 
-        // 只要满足一种场景就可偷看
         return hasUnrevealedAfter || (lastRevealedIndex == -1 && hasAnyUnrevealed);
     }
 
-    /// <summary>
-    /// 新增：判断是否有任意未翻开的公牌（解决新增公牌后无已翻开牌的情况）
-    /// </summary>
     private bool HasAnyUnrevealedCards()
     {
         List<GameObject> publicCards = cardDeckSystem.PublicCardObjects;
@@ -119,7 +100,7 @@ public class PeekCardOverlayButton : MonoBehaviour
         {
             if (card == null) continue;
             CardFaceController ctrl = card.GetComponent<CardFaceController>();
-            if (ctrl != null && ctrl._isShowingBack) // 未翻开（背面）
+            if (ctrl != null && ctrl._isShowingBack)
             {
                 return true;
             }
@@ -127,9 +108,6 @@ public class PeekCardOverlayButton : MonoBehaviour
         return false;
     }
 
-    /// <summary>
-    /// 核心修复：修正重复获取CardFaceController的错误
-    /// </summary>
     private int GetLastRevealedCardIndex()
     {
         List<GameObject> publicCards = cardDeckSystem.PublicCardObjects;
@@ -141,11 +119,10 @@ public class PeekCardOverlayButton : MonoBehaviour
             GameObject card = publicCards[i];
             if (card == null) continue;
 
-            // 修复：直接使用已获取的ctrl，无需重复GetComponent
             CardFaceController ctrl = card.GetComponent<CardFaceController>();
             if (ctrl == null) continue;
 
-            bool isRevealed = !ctrl._isShowingBack; // 非背面=已翻开
+            bool isRevealed = !ctrl._isShowingBack;
             if (isRevealed)
             {
                 lastRevealedIndex = i;
@@ -154,9 +131,6 @@ public class PeekCardOverlayButton : MonoBehaviour
         return lastRevealedIndex;
     }
 
-    /// <summary>
-    /// 新增：公共刷新方法（供新增公牌脚本调用）
-    /// </summary>
     public void RefreshPeekButtonState()
     {
         _isPeeking = false;
@@ -167,19 +141,14 @@ public class PeekCardOverlayButton : MonoBehaviour
 
     private void TogglePeek()
     {
-        // Toggle Logic
         bool targetState = !_isPeeking;
 
-        if (targetState) // Want to start peeking
+        if (targetState)
         {
-            // Cost Check
-            if (betManager != null)
+            if (betManager != null && !betManager.TrySpendChips(betManager.costPeekCard))
             {
-                if (!betManager.TrySpendChips(betManager.costPeekCard))
-                {
-                    Debug.LogWarning($"筹码不足！无法偷看。需要: {betManager.costPeekCard}");
-                    return;
-                }
+                Debug.LogWarning($"筹码不足！无法偷看。需要: {betManager.costPeekCard}");
+                return;
             }
         }
 
@@ -196,7 +165,7 @@ public class PeekCardOverlayButton : MonoBehaviour
     }
 
     /// <summary>
-    /// 优化：适配无已翻开牌时的偷看逻辑
+    /// 核心逻辑：生成克隆体 → 初始化背面状态 → 启动Dissolve渐变
     /// </summary>
     private void CreatePeekOverlays()
     {
@@ -204,7 +173,6 @@ public class PeekCardOverlayButton : MonoBehaviour
         if (publicCards == null || publicCards.Count == 0) return;
 
         int lastRevealedIndex = GetLastRevealedCardIndex();
-        // 无已翻开牌时，从第0张未翻开牌开始偷看
         int peekStartIndex = lastRevealedIndex == -1 ? 0 : lastRevealedIndex + 1;
         int availableCount = publicCards.Count - peekStartIndex;
         int peekCount = availableCount >= 2 ? 2 : (availableCount >= 1 ? 1 : 0);
@@ -225,42 +193,115 @@ public class PeekCardOverlayButton : MonoBehaviour
             CardFaceController originCtrl = originCard.GetComponent<CardFaceController>();
             if (originCtrl == null || originCtrl.GetCardText() == "未知卡牌") continue;
 
-            GameObject overlay = Instantiate(peekCardOverlayPrefab, originCard.transform.parent);
-            Vector3 newPos = originCard.transform.position;
-            newPos.x += peekOffset.x;
-            newPos.y += peekOffset.y;
-            overlay.transform.position = newPos;
+            // ========== 1. 克隆体位置与尺寸匹配（保留原有精准逻辑） ==========
+            RectTransform originCardRect = originCard.GetComponent<RectTransform>();
+            if (originCardRect == null) continue;
 
-            overlay.transform.rotation = originCard.transform.rotation;
-            overlay.transform.localScale = originCard.transform.localScale;
-
-            Image overlayFront = overlay.GetComponentInChildren<Image>(true);
-            Text overlayText = overlay.GetComponentInChildren<Text>(true);
-
-            if (overlayFront != null)
+            GameObject overlay = Instantiate(peekCardOverlayPrefab, originCardRect.parent);
+            RectTransform overlayRect = overlay.GetComponent<RectTransform>();
+            if (overlayRect == null)
             {
-                overlayFront.sprite = originCtrl.GetCardFrontSprite();
-                Color frontColor = overlayFront.color;
-                frontColor.a = peekAlpha;
-                overlayFront.color = frontColor;
-                overlayFront.gameObject.SetActive(true);
+                Destroy(overlay);
+                continue;
             }
-            if (overlayText != null)
+
+            overlayRect.sizeDelta = originCardRect.sizeDelta;
+            overlayRect.anchorMin = originCardRect.anchorMin;
+            overlayRect.anchorMax = originCardRect.anchorMax;
+            overlayRect.pivot = originCardRect.pivot;
+            overlayRect.anchoredPosition = new Vector2(
+                originCardRect.anchoredPosition.x + peekOffset.x,
+                originCardRect.anchoredPosition.y + peekOffset.y
+            );
+            overlayRect.rotation = originCardRect.rotation;
+            overlayRect.localScale = originCardRect.localScale;
+
+            // ========== 2. 初始化克隆体状态：显示背面，隐藏正面 ==========
+            Transform overlayCardBack = overlay.transform.Find("CardBack");
+            Transform overlayCardFront = overlay.transform.Find("CardFront");
+            if (overlayCardBack == null || overlayCardFront == null)
             {
-                overlayText.text = originCtrl.GetCardText();
-                Color textColor = overlayText.color;
-                textColor.a = peekAlpha + 0.1f;
-                overlayText.color = textColor;
-                overlayText.gameObject.SetActive(true);
+                Debug.LogError("克隆体缺少CardBack/CardFront子物体！");
+                Destroy(overlay);
+                continue;
             }
+
+            // 初始状态：显示背面，隐藏正面
+            overlayCardBack.gameObject.SetActive(true);
+            overlayCardFront.gameObject.SetActive(false);
+
+            // ========== 3. 克隆体背面材质实例化（避免共享影响其他卡牌） ==========
+            Image overlayBackImage = overlayCardBack.GetComponent<Image>();
+            if (overlayBackImage == null || overlayBackImage.material == null)
+            {
+                Debug.LogWarning("克隆体CardBack缺少Image或材质！");
+                Destroy(overlay);
+                continue;
+            }
+
+            // 实例化背面材质（仅当前克隆体使用）
+            Material backInstance = new Material(overlayBackImage.material);
+            backInstance.SetFloat(DISSOLVE_PROPERTY_NAME, -1f); // 初始Dissolve为-1（完全不透明）
+            overlayBackImage.material = backInstance;
+            _backMaterialInstances.Add(backInstance);
+
+            // ========== 4. 同步克隆体正面内容与原卡牌一致 ==========
+            Image overlayFrontImage = overlayCardFront.GetComponent<Image>();
+            Text overlayFrontText = overlayCardFront.GetComponentInChildren<Text>(true);
+            if (overlayFrontImage != null)
+            {
+                overlayFrontImage.sprite = originCtrl.GetCardFrontSprite();
+            }
+            if (overlayFrontText != null)
+            {
+                overlayFrontText.text = originCtrl.GetCardText();
+            }
+
+            // ========== 5. 启动背面Dissolve渐变协程 ==========
+            StartCoroutine(AnimateBackDissolve(overlayBackImage, backInstance, overlayCardFront.gameObject));
 
             overlay.SetActive(true);
             _overlayList.Add(overlay);
         }
     }
 
+    /// <summary>
+    /// 协程：背面材质Dissolve从-1渐变到1，完成后显示正面
+    /// </summary>
+    private IEnumerator AnimateBackDissolve(Image backImage, Material backMaterial, GameObject frontObject)
+    {
+        float elapsedTime = 0f;
+        float startValue = -1f;
+        float targetValue = 1f;
+
+        while (elapsedTime < dissolveDuration)
+        {
+            elapsedTime = Mathf.Min(elapsedTime + Time.deltaTime, dissolveDuration);
+            float currentValue = Mathf.Lerp(startValue, targetValue, elapsedTime / dissolveDuration);
+
+            // 更新背面材质的Dissolve值
+            backMaterial.SetFloat(DISSOLVE_PROPERTY_NAME, currentValue);
+            backImage.material = backMaterial;
+
+            yield return null;
+        }
+
+        // 渐变完成：确保Dissolve为1，显示正面
+        backMaterial.SetFloat(DISSOLVE_PROPERTY_NAME, targetValue);
+        backImage.material = backMaterial;
+        frontObject.SetActive(true);
+    }
+
     private void DestroyPeekOverlays()
     {
+        // 销毁材质实例（避免内存泄漏）
+        foreach (var mat in _backMaterialInstances)
+        {
+            if (mat != null) Destroy(mat);
+        }
+        _backMaterialInstances.Clear();
+
+        // 销毁克隆体
         foreach (var overlay in _overlayList)
         {
             if (overlay != null) Destroy(overlay);

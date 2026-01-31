@@ -2062,8 +2062,8 @@ MonoBehaviour:
   peekCardOverlayPrefab: {fileID: 4132936062147507488, guid: 6aad0ce723de00842b17b02301b2bd04, type: 3}
   betManager: {fileID: 0}
   mouseAction: {fileID: 0}
-  peekOffset: {x: -10, y: 10}
-  peekAlpha: 0.577
+  peekOffset: {x: 0, y: 0}
+  dissolveDuration: 1.2
 --- !u!114 &714463198
 MonoBehaviour:
   m_ObjectHideFlags: 0
