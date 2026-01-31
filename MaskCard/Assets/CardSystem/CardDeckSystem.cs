@@ -432,24 +432,122 @@ public class CardDeckSystem : MonoBehaviour
         }
     }
 
+    [Header("手牌视觉效果 (伪3D)")]
+    public float handFanAngle = 10f; // 扇形展开角度
+    public float handHeightArc = 15f; // 高度拱形偏移
+    public float heldCardScale = 1.2f; // 手牌放大倍率
+    public Vector2 handPositionOffset = Vector2.zero; // 手牌整体位置偏移（用于微调中心）
+
     // ========== 改为公共方法：供CardDeleteSystem调用 ==========
     public void RearrangePlayerHand()
     {
         int cardCount = playerCardObjects.Count;
         if (cardCount == 0 || playerHandArea == null) return;
 
-        float totalWidth = (cardCount - 1) * (cardWidth + cardSpacing);
-        float startX = -totalWidth / 2;
-
+        // 计算布局参数
+        // 只有一张牌时，视为中心；多张牌时计算总宽度
+        
+        // 简单的线性分布中心点计算
+        // 0 -> 0
+        // 0,1 -> -0.5, 0.5
+        // 0,1,2 -> -1, 0, 1
+        
         for (int i = 0; i < cardCount; i++)
         {
             GameObject cardObj = playerCardObjects[i];
             RectTransform cardRect = cardObj.GetComponent<RectTransform>();
             if (cardRect == null) continue;
 
-            cardRect.anchoredPosition = new Vector2(startX + i * (cardWidth + cardSpacing), 0);
-            cardRect.anchorMin = new Vector2(0.5f, 0.5f);
-            cardRect.anchorMax = new Vector2(0.5f, 0.5f);
+            // 1. 计算归一化位置 (Centered Index)
+            // i - (N-1)/2
+            float centerOffset = i - (cardCount - 1) / 2.0f;
+
+            // 2. 计算X坐标：基础间距 + 整体X偏移
+            float xPos = centerOffset * (cardWidth + cardSpacing) + handPositionOffset.x;
+
+            // 3. 计算Y坐标：拱形偏移 (中心高，两边低) + 整体Y偏移
+            // 使用简化的二次函数模拟： y = -a * x^2
+            // 或者直接用 centerOffset 的绝对值： y = -abs(offset) * arcHeight
+            float yPos = -Mathf.Abs(centerOffset) * handHeightArc + handPositionOffset.y;
+
+            // ==================== Slot Pattern Implementation ====================
+            // 检查当前卡牌是否已经在Slot里
+            Transform currentParent = cardObj.transform.parent;
+            GameObject slotObj = null;
+            RectTransform slotRect = null;
+
+            // 如果父物体直接是Area，说明还没放入Slot
+            if (currentParent == playerHandArea)
+            {
+                // 创建新Slot
+                slotObj = new GameObject($"HandSlot_{i}", typeof(RectTransform));
+                slotObj.transform.SetParent(playerHandArea);
+                
+                // 添加自动销毁脚本
+                slotObj.AddComponent<HandSlotAutoDestroy>();
+                
+                // 将卡牌放入Slot
+                cardObj.transform.SetParent(slotObj.transform);
+                
+                // 重置卡牌局部坐标（很重要，确保它在Slot中心）
+                cardRect.anchoredPosition = Vector2.zero;
+                cardRect.localRotation = Quaternion.identity;
+                cardRect.localScale = Vector3.one;
+
+                slotRect = slotObj.GetComponent<RectTransform>();
+            }
+            else if (currentParent.GetComponent<HandSlotAutoDestroy>() != null)
+            {
+                // 已经是Slot了
+                slotObj = currentParent.gameObject;
+                slotRect = slotObj.GetComponent<RectTransform>();
+            }
+            else
+            {
+                // 异常情况（比如其他父物体），暂时直接操作Card
+                // Debug.LogWarning($"Card {cardObj.name} parent is {currentParent.name}, not Area or Slot.");
+                slotRect = cardRect; 
+            }
+
+            // ==================== Layout Logic Applied to SLOT ====================
+            
+            // 4. 计算旋转：扇形展开
+            float rotationZ = -centerOffset * handFanAngle;
+
+            Debug.Log($"[HandLayout] Slot {i}: Pos=({xPos}, {yPos}), Rot={rotationZ}, Scale={heldCardScale}");
+
+            // 应用变换到 Slot (容器)
+            if (slotRect != null)
+            {
+                slotRect.anchoredPosition = new Vector2(xPos, yPos);
+                slotRect.localRotation = Quaternion.Euler(0, 0, rotationZ);
+                slotRect.localScale = Vector3.one * heldCardScale;
+
+                // 确保Slot锚点在中心
+                slotRect.anchorMin = new Vector2(0.5f, 0.5f);
+                slotRect.anchorMax = new Vector2(0.5f, 0.5f);
+                
+                // 调整Slot的层级
+                slotObj.transform.SetSiblingIndex(i);
+            }
+            
+            // 确保卡牌本身在Slot内是归零的 (防止CardSelectEffect或其他脚本偏移了它而没复位)
+            // 注意：如果CardSelectEffect正在运作，它会修改Card的anchoredPosition
+            // 我们需要更新CardSelectEffect的“原始位置”为(0,0)，因为现在它是相对于Slot的
+            CardSelectEffect selectEffect = cardObj.GetComponent<CardSelectEffect>();
+            if (selectEffect != null)
+            {
+                // 卡牌相对于Slot的“原点”应该是0,0
+                selectEffect.UpdateOriginalPosition(Vector2.zero);
+            }
+        }
+        
+        // 检查是否有LayoutGroup干扰
+        UnityEngine.UI.LayoutGroup layoutGroup = playerHandArea.GetComponent<UnityEngine.UI.LayoutGroup>();
+        if (layoutGroup != null && layoutGroup.enabled)
+        {
+            Debug.LogWarning("发现 PlayerHandArea 上挂有 Component LayoutGroup！这会覆盖手牌的自定义布局位置，已自动禁用它！");
+            layoutGroup.enabled = false;
         }
     }
 

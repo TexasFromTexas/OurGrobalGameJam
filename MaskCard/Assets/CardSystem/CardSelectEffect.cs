@@ -100,6 +100,25 @@ public class CardSelectEffect : MonoBehaviour, IPointerClickHandler
         }
     }
 
+    /// <summary>
+    /// 更新原始位置（供外部布局系统调用）
+    /// </summary>
+    /// <param name="newPos">新的基础位置</param>
+    public void UpdateOriginalPosition(Vector2 newPos)
+    {
+        _originalAnchoredPos = newPos;
+        // 如果当前未选中，直接应用新位置
+        if (!isSelected)
+        {
+            _cardRect.anchoredPosition = _originalAnchoredPos;
+        }
+        else
+        {
+            // 如果已选中，保持偏移状态但基于新位置
+            SetCardSelectPos();
+        }
+    }
+
     // 可选：点击空白区域取消所有选中（需挂载到Canvas）
     /*
     private void Update()
