@@ -104,26 +104,20 @@ namespace BetSystem
             
             // Note: Judge.GetRateNow signature: (enemyCards, raise, "fold"(Call), "drop"(Fold))
             Judge.Instance.GetRateNow(fullHand, out raiseRate, out callRate, out foldRate);
+           behaviorType behavior = Judge.Instance.GetAIBehavior(fullHand);
 
-            Debug.Log($"[EnemyAI] Decision Rates - Raise: {raiseRate}, Call: {callRate}, Fold: {foldRate}");
-
-            float roll = Random.value; // 0.0 to 1.0
-
-            if (roll < raiseRate)
-            {
-                Debug.Log("[EnemyAI] Action: Raise");
-                betManager.EnemyRaise();
-            }
-            else if (roll < raiseRate + callRate)
-            {
-                Debug.Log("[EnemyAI] Action: Call");
-                betManager.EnemyCall();
-            }
-            else
-            {
-                Debug.Log("[EnemyAI] Action: Fold");
-                betManager.EnemyFold();
-            }
+           switch (behavior)
+           {
+               case behaviorType.raise:
+                   betManager.EnemyRaise();
+                   break;
+               case behaviorType.fold:
+                   betManager.EnemyFold();
+                   break;
+               case behaviorType.drop:
+                   betManager.EnemyCall();
+                   break;
+           }
         }
 
         // Helpers reused from Bridge
