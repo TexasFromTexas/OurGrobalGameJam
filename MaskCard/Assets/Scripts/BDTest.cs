@@ -19,96 +19,9 @@ public class BDTest : MonoBehaviour
     void Start()
     {
         judge = Judge.Instance;
-        foreach (var item in myCards)
-        {
-            string suitStr = item.suit switch
-            {
-                CardSuit.Spade => "黑桃",
-                CardSuit.Heart => "红桃",
-                CardSuit.Club => "梅花",
-                CardSuit.Diamond => "方块",
-                _ => ""
-            };
-            string rankStr = item.rank switch
-            {
-                CardRank.Ace => "A",
-                CardRank.Two => "2",
-                CardRank.Three => "3",
-                CardRank.Four => "4",
-                CardRank.Five => "5",
-                CardRank.Six => "6",
-                CardRank.Seven => "7",
-                CardRank.Eight => "8",
-                CardRank.Nine => "9",
-                CardRank.Ten => "10",
-                CardRank.Jack => "J",
-                CardRank.Queen => "Q",
-                CardRank.King => "K",
-                CardRank.Joker => "Joker",
-                _ => ""
-            };
-            item.cardName = $"{suitStr}{rankStr}";
-        }
-        foreach (var item in enemyCards)
-        {
-            string suitStr = item.suit switch
-            {
-                CardSuit.Spade => "黑桃",
-                CardSuit.Heart => "红桃",
-                CardSuit.Club => "梅花",
-                CardSuit.Diamond => "方块",
-                _ => ""
-            };
-            string rankStr = item.rank switch
-            {
-                CardRank.Ace => "A",
-                CardRank.Two => "2",
-                CardRank.Three => "3",
-                CardRank.Four => "4",
-                CardRank.Five => "5",
-                CardRank.Six => "6",
-                CardRank.Seven => "7",
-                CardRank.Eight => "8",
-                CardRank.Nine => "9",
-                CardRank.Ten => "10",
-                CardRank.Jack => "J",
-                CardRank.Queen => "Q",
-                CardRank.King => "K",
-                CardRank.Joker => "Joker",
-                _ => ""
-            };
-            item.cardName = $"{suitStr}{rankStr}";
-        }
-        foreach (var item in publicCards)
-        {
-            string suitStr = item.suit switch
-            {
-                CardSuit.Spade => "黑桃",
-                CardSuit.Heart => "红桃",
-                CardSuit.Club => "梅花",
-                CardSuit.Diamond => "方块",
-                _ => ""
-            };
-            string rankStr = item.rank switch
-            {
-                CardRank.Ace => "A",
-                CardRank.Two => "2",
-                CardRank.Three => "3",
-                CardRank.Four => "4",
-                CardRank.Five => "5",
-                CardRank.Six => "6",
-                CardRank.Seven => "7",
-                CardRank.Eight => "8",
-                CardRank.Nine => "9",
-                CardRank.Ten => "10",
-                CardRank.Jack => "J",
-                CardRank.Queen => "Q",
-                CardRank.King => "K",
-                CardRank.Joker => "Joker",
-                _ => ""
-            };
-            item.cardName = $"{suitStr}{rankStr}";
-        }
+        SetCardsName(enemyCards);
+        SetCardsName(myCards);
+        SetCardsName(publicCards);
         //  myCards = new List<PlayingCard>();
         //  myCards.Add(new PlayingCard(CardSuit.Spade, CardRank.Ace));
         //  myCards.Add(new PlayingCard(CardSuit.Spade, CardRank.King));
@@ -126,6 +39,45 @@ public class BDTest : MonoBehaviour
 
         myCards.AddRange(publicCards);
         enemyCards.AddRange(publicCards);
+    }
+
+    /// <summary>
+    /// 根据牌的花色和牌面值写出牌名
+    /// 仅测试用
+    /// </summary>
+    /// <param name="cards"></param>
+    private void SetCardsName(List<PlayingCard> cards)
+    {
+        foreach (var item in cards)
+        {
+            string suitStr = item.suit switch
+            {
+                CardSuit.Spade => "黑桃",
+                CardSuit.Heart => "红桃",
+                CardSuit.Club => "梅花",
+                CardSuit.Diamond => "方块",
+                _ => ""
+            };
+            string rankStr = item.rank switch
+            {
+                CardRank.Ace => "A",
+                CardRank.Two => "2",
+                CardRank.Three => "3",
+                CardRank.Four => "4",
+                CardRank.Five => "5",
+                CardRank.Six => "6",
+                CardRank.Seven => "7",
+                CardRank.Eight => "8",
+                CardRank.Nine => "9",
+                CardRank.Ten => "10",
+                CardRank.Jack => "J",
+                CardRank.Queen => "Q",
+                CardRank.King => "K",
+                CardRank.Joker => "Joker",
+                _ => ""
+            };
+            item.cardName = $"{suitStr}{rankStr}";
+        }
     }
 
     // Update is called once per frame

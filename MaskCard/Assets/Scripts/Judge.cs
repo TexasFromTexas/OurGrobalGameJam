@@ -66,26 +66,6 @@ public class Judge
     private static Judge instance;
 
 
-    public class PokerHandResult
-    {
-        public PokerHandType HandType { get; set; }
-        public List<PlayingCard> Cards { get; set; }
-        public int Score { get; set; }  // 用于比较相同类型手牌的大小
-
-        /// <summary>
-        /// 创建一个 PokerHandResult 对象
-        /// </summary>
-        /// <param name="type"></param>
-        /// <param name="cards"></param>
-        /// <param name="score"></param>
-        public PokerHandResult(PokerHandType type, List<PlayingCard> cards, int score = 0)
-        {
-            HandType = type;
-            Cards = cards;
-            Score = score;
-        }
-    }
-
     /// <summary>
     /// 根据手牌列表，返回最佳手牌和手牌类型
     /// </summary>
@@ -333,5 +313,29 @@ public class Judge
         }
 
         return bestResult ?? new PokerHandResult(PokerHandType.HighCard, cards, 0);
+    }
+}
+
+/// <summary>
+/// 牌型评估结果类
+/// 牌型 HandType、牌组 Cards、牌型值 Value
+/// </summary>
+public class PokerHandResult
+{
+    public PokerHandType HandType { get; set; }
+    public List<PlayingCard> Cards { get; set; }
+    public int Score { get; set; }  // 用于比较相同类型手牌的大小
+
+    /// <summary>
+    /// 创建一个 PokerHandResult 对象
+    /// </summary>
+    /// <param name="type"></param>
+    /// <param name="cards"></param>
+    /// <param name="score"></param>
+    public PokerHandResult(PokerHandType type, List<PlayingCard> cards, int score = 0)
+    {
+        HandType = type;
+        Cards = cards;
+        Score = score;
     }
 }
