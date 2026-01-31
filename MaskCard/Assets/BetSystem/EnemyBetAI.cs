@@ -11,8 +11,8 @@ namespace BetSystem
         public CardDeckSystem cardDeckSystem;
 
         [Header("Settings")]
-        public float minThinkingTime = 1.0f;
-        public float maxThinkingTime = 2.0f;
+        public float minThinkingTime = 0.3f;
+        public float maxThinkingTime = 0.4f;
 
         // Internal flag to prevent double-acting during coroutine
         private bool isThinking = false;
@@ -74,6 +74,16 @@ namespace BetSystem
             isThinking = false;
             hasRaisedThisPhase = false;
             StopAllCoroutines();
+            
+            // User Request: Force wait 1 second then check to ensure cards are ready
+            StartCoroutine(ForceFirstTurnCheck());
+        }
+
+        private IEnumerator ForceFirstTurnCheck()
+        {
+            yield return new WaitForSeconds(1.0f);
+            Debug.Log("[EnemyAI] Force checking turn after 1s delay...");
+            CheckTurn();
         }
 
         private void CheckTurn()
