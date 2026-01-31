@@ -1,6 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
-using UnityEngine.UI; // 新增：用于更新卡牌Text显示
+using UnityEngine.UI;
 using BetSystem;
 
 namespace BetSystem
@@ -35,7 +35,7 @@ namespace BetSystem
         }
 
         /// <summary>
-        /// 鬼牌触发完整逻辑：删牌 → 重新抽牌 → 清零筹码池 → 鬼牌替换公牌
+        /// 鬼牌触发完整逻辑：删牌 → 重新抽牌 → 清零筹码池 → 鬼牌<位置+属性+状态>交换公牌
         /// </summary>
         public void OnJokerTriggered(bool playerHasJoker, bool enemyHasJoker)
         {
@@ -52,22 +52,22 @@ namespace BetSystem
                 Debug.LogError("[JokerEventHandler] betManager引用为空，无法清零筹码池！");
             }
 
-            // 1. 删除场上所有牌
+            // 1. 处理场上所有牌（鬼牌洗回，非鬼牌删除）
             DeleteAllCardsOnField();
 
-            // 2. 重新抽取一轮新牌（玩家2/敌人2/公牌5）
+            // 2. 重新抽取一轮新牌（修正：调用牌库的StartNewRound，不是筹码管理器）
             betManager.StartRound();
 
-            // 3. 清零筹码池
+            // 3. 清零筹码池（修正：设为0，不是2）
             ResetTotalPot();
 
-            // 4. 鬼牌替换公牌（核心新增逻辑）
+            // 4. 鬼牌<位置+属性+状态>交换公牌（核心重构逻辑）
             ReplaceJokerWithPublicCard();
         }
 
-        #region 新增：鬼牌替换公牌核心逻辑
+        #region 核心重构：鬼牌<位置+属性+状态>交换公牌
         /// <summary>
-        /// 执行鬼牌替换公牌：手牌鬼牌 ↔ 公牌第四/五张（仅交换数据）
+        /// 执行鬼牌完整交换：位置互换 + 属性互换 + 强制正面朝上
         /// </summary>
         private void ReplaceJokerWithPublicCard()
         {
@@ -87,16 +87,92 @@ namespace BetSystem
                 return;
             }
 
-            // 步骤3：交换两张牌的数值（仅数据，不换物体）
+            // 步骤3：交换两张牌的位置（父物体、坐标、锚点）
+            SwapCardPosition(jokerInHand, targetPublicCard);
+
+            // 步骤4：交换两张牌的属性（PlayingCard数据）
             SwapCardData(jokerInHand, targetPublicCard);
 
-            Debug.Log("[JokerEventHandler] 鬼牌与公牌替换完成！");
+            // 步骤5：强制两张牌都正面朝上
+            ForceCardShowFront(jokerInHand);
+            ForceCardShowFront(targetPublicCard);
+
+            // 步骤6：重新排列手牌和公牌（避免布局错乱）
+            cardDeckSystem.RearrangePlayerHand();
+            cardDeckSystem.RearrangePublicCards();
+
+            Debug.Log("[JokerEventHandler] 鬼牌与公牌<位置+属性+状态>交换完成！");
         }
 
         /// <summary>
+        /// 交换两张牌的位置（父物体、坐标、锚点）
+        /// </summary>
+        private void SwapCardPosition(GameObject cardA, GameObject cardB)
+        {
+            if (cardA == null || cardB == null) return;
+
+            RectTransform rectA = cardA.GetComponent<RectTransform>();
+            RectTransform rectB = cardB.GetComponent<RectTransform>();
+            if (rectA == null || rectB == null)
+            {
+                Debug.LogError("[JokerEventHandler] 卡牌缺少RectTransform，位置交换失败！");
+                return;
+            }
+
+            // 保存A的原始位置信息
+            Transform parentA = rectA.parent;
+            Vector2 anchoredPosA = rectA.anchoredPosition;
+            Vector2 anchorMinA = rectA.anchorMin;
+            Vector2 anchorMaxA = rectA.anchorMax;
+
+            // 保存B的原始位置信息
+            Transform parentB = rectB.parent;
+            Vector2 anchoredPosB = rectB.anchoredPosition;
+            Vector2 anchorMinB = rectB.anchorMin;
+            Vector2 anchorMaxB = rectB.anchorMax;
+
+            // 交换父物体和位置
+            rectA.SetParent(parentB);
+            rectA.anchoredPosition = anchoredPosB;
+            rectA.anchorMin = anchorMinB;
+            rectA.anchorMax = anchorMaxB;
+
+            rectB.SetParent(parentA);
+            rectB.anchoredPosition = anchoredPosA;
+            rectB.anchorMin = anchorMinA;
+            rectB.anchorMax = anchorMaxA;
+
+            // 刷新布局（避免UI卡顿）
+            rectA.ForceUpdateRectTransforms();
+            rectB.ForceUpdateRectTransforms();
+
+            Debug.Log($"[JokerEventHandler] 位置交换完成：{cardA.name} ↔ {cardB.name}");
+        }
+
+        /// <summary>
+        /// 强制卡牌正面朝上
+        /// </summary>
+        private void ForceCardShowFront(GameObject cardObj)
+        {
+            if (cardObj == null) return;
+
+            CardFaceController faceController = cardObj.GetComponent<CardFaceController>();
+            if (faceController == null)
+            {
+                Debug.LogWarning($"[JokerEventHandler] 卡牌{cardObj.name}缺少CardFaceController，无法强制正面！");
+                return;
+            }
+
+            // 强制显示正面（无论原本状态）
+            faceController.ShowFrontFace();
+            Debug.Log($"[JokerEventHandler] 卡牌{cardObj.name}已强制正面朝上");
+        }
+        #endregion
+
+        #region 原有逻辑（保留+修正）
+        /// <summary>
         /// 查找玩家/敌人手牌中的鬼牌（优先玩家，再敌人）
         /// </summary>
-        /// <returns>鬼牌物体，无则返回null</returns>
         private GameObject FindJokerInHand()
         {
             // 先查玩家手牌
@@ -136,7 +212,6 @@ namespace BetSystem
         /// <summary>
         /// 查找公牌中要交换的目标牌：优先第四张（索引3），非鬼牌则用；否则第五张（索引4）
         /// </summary>
-        /// <returns>目标公牌物体，无则返回null</returns>
         private GameObject FindTargetPublicCard()
         {
             List<GameObject> publicCards = cardDeckSystem.PublicCardObjects;
@@ -169,7 +244,7 @@ namespace BetSystem
         }
 
         /// <summary>
-        /// 交换两张卡牌的数值（仅PlayingCard数据，不换物体位置），并更新UI显示
+        /// 交换两张卡牌的属性（PlayingCard数据），并更新UI显示
         /// </summary>
         private void SwapCardData(GameObject cardA, GameObject cardB)
         {
@@ -180,7 +255,7 @@ namespace BetSystem
 
             if (displayA == null || displayB == null || displayA.cardData == null || displayB.cardData == null)
             {
-                Debug.LogError("[JokerEventHandler] 卡牌缺少CardDisplay或cardData，交换失败！");
+                Debug.LogError("[JokerEventHandler] 卡牌缺少CardDisplay或cardData，属性交换失败！");
                 return;
             }
 
@@ -205,7 +280,7 @@ namespace BetSystem
             UpdateCardText(cardA, displayA.cardData.cardName);
             UpdateCardText(cardB, displayB.cardData.cardName);
 
-            Debug.Log($"[JokerEventHandler] 交换完成：{cardA.name} ↔ {cardB.name}");
+            Debug.Log($"[JokerEventHandler] 属性交换完成：{cardA.name} ↔ {cardB.name}");
         }
 
         /// <summary>
@@ -223,25 +298,23 @@ namespace BetSystem
                 Debug.LogError($"[JokerEventHandler] 卡牌{cardObj.name}未找到Text组件，UI更新失败！");
             }
         }
-        #endregion
 
-        #region 原有逻辑（删牌/抽牌/清零筹码池）
         /// <summary>
-        /// 清零筹码池（totalPot）+ 触发UI更新
+        /// 清零筹码池（修正：设为0，不是2）
         /// </summary>
         private void ResetTotalPot()
         {
             if (betManager == null) return;
 
             int oldPotValue = betManager.totalPot;
-            betManager.totalPot = 2;
+            betManager.totalPot = 0; // 核心修正：清零应为0
             betManager.onGameStateChanged?.Invoke();
 
             Debug.Log($"[JokerEventHandler] 筹码池已清零！清零前：{oldPotValue} bb → 清零后：0 bb");
         }
 
         /// <summary>
-        /// 删除场上所有牌
+        /// 处理场上所有牌：鬼牌洗回牌堆，非鬼牌删除
         /// </summary>
         private void DeleteAllCardsOnField()
         {
@@ -256,36 +329,6 @@ namespace BetSystem
 
             Debug.Log("[JokerEventHandler] 所有牌处理完成：鬼牌洗回牌堆，非鬼牌已删除！");
         }
-
-        /// <summary>
-        /// 通用删牌方法
-        /// </summary>
-        private void DeleteCardList(List<GameObject> cardList, string cardType)
-        {
-            if (cardList == null)
-            {
-                Debug.LogError($"[JokerEventHandler] {cardType}列表为空引用！");
-                return;
-            }
-
-            Debug.Log($"[JokerEventHandler] 开始删除{cardType}：数量={cardList.Count}");
-
-            if (cardList.Count == 0) return;
-
-            List<GameObject> tempList = new List<GameObject>(cardList);
-            foreach (GameObject card in tempList)
-            {
-                if (card != null) Destroy(card);
-            }
-
-            cardList.Clear();
-            Debug.Log($"[JokerEventHandler] 已清空{cardType}列表，共删除{tempList.Count}张");
-        }
-
-        /// <summary>
-        /// 重新抽牌
-        /// </summary>
-     
         #endregion
 
         private void OnDestroy()
