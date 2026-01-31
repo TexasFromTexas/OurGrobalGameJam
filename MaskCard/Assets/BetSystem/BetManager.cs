@@ -1,8 +1,18 @@
 using UnityEngine;
 using UnityEngine.Events;
+using System.Collections;
 
 namespace BetSystem
 {
+    public enum BetPhase
+    {
+        Preflop,
+        Flop,
+        Turn,
+        River,
+        Showdown
+    }
+
     public class BetManager : MonoBehaviour
     {
         [Header("Settings")]
@@ -11,42 +21,56 @@ namespace BetSystem
 
         [Header("State")]
         public int playerChips;
-        public int currentPot;
-        public int currentMaxContribution;
-        public int playerContributedThisRound;
-        public int enemyContributedThisRound;
+        public int totalPot;
+        
+        [Header("Round Logic")]
+        public int currentGlobalStake; 
+        public int playerContributedThisPhase;
+        public int enemyContributedThisPhase;
+        public BetPhase currentPhase;
+
+        public bool playerActedThisPhase;
+        public bool enemyActedThisPhase;
 
         [Header("Events")]
-        public UnityEvent onChipsNegative; // Trigger reveal cards
-        public UnityEvent onGameOver; // Trigger death
-        public UnityEvent onGameStateChanged; // UI update
+        public UnityEvent onChipsNegative; 
+        public UnityEvent onGameOver;
+        public UnityEvent onGameStateChanged;
+        public UnityEvent<BetPhase> onPhaseChanged;
+        public UnityEvent onNewRoundStarted; // New Event
 
-        private void Start()
+        private IEnumerator Start()
         {
+            // Wait one frame to ensure CardDeckSystem and others are initialized
+            yield return null;
+            
             playerChips = initialPlayerChips;
             StartRound();
         }
 
         public void StartRound()
         {
-            currentMaxContribution = initialBet;
-            playerContributedThisRound = initialBet;
-            enemyContributedThisRound = initialBet;
+            currentPhase = BetPhase.Preflop;
+            totalPot = 0;
+            currentGlobalStake = initialBet;
+            ResetPhaseState();
             
-            playerChips -= initialBet;
-            currentPot = initialBet * 2; // Forced 1bb each
+            ApplyContribution(true, initialBet);
+            ApplyContribution(false, initialBet);
+            playerActedThisPhase = false;
+            enemyActedThisPhase = false;
 
             CheckNegativeChips();
             onGameStateChanged?.Invoke();
+            onPhaseChanged?.Invoke(currentPhase);
+            onNewRoundStarted?.Invoke(); // Trigger external systems (Card Redeal)
         }
 
-        #region Player Actions
+        #region Actions
         public void PlayerRaise() => Raise(true);
         public void PlayerCall() => Call(true);
         public void PlayerFold() => Fold(true);
-        #endregion
 
-        #region Enemy Actions
         public void EnemyRaise() => Raise(false);
         public void EnemyCall() => Call(false);
         public void EnemyFold() => Fold(false);
@@ -54,93 +78,131 @@ namespace BetSystem
 
         private void Raise(bool isPlayer)
         {
-            // Exponential raising: double the previous max stake
-            currentMaxContribution *= 2;
+            MarkAsActed(isPlayer);
+            currentGlobalStake *= 2;
             
             if (isPlayer)
             {
-                int additional = currentMaxContribution - playerContributedThisRound;
-                playerChips -= additional;
-                playerContributedThisRound = currentMaxContribution;
+                int needed = currentGlobalStake - playerContributedThisPhase;
+                if (needed > 0) ApplyContribution(true, needed);
             }
             else
             {
-                // Enemy has infinite chips, just update contribution
-                enemyContributedThisRound = currentMaxContribution;
+                int needed = currentGlobalStake - enemyContributedThisPhase;
+                if (needed > 0) ApplyContribution(false, needed);
             }
-
-            UpdatePot();
+            
             CheckNegativeChips();
             onGameStateChanged?.Invoke();
         }
 
         private void Call(bool isPlayer)
         {
+            MarkAsActed(isPlayer);
+
             if (isPlayer)
             {
-                int needed = enemyContributedThisRound - playerContributedThisRound;
-                if (needed > 0)
-                {
-                    playerChips -= needed;
-                    playerContributedThisRound = enemyContributedThisRound;
-                }
+                int needed = enemyContributedThisPhase - playerContributedThisPhase;
+                if (needed > 0) ApplyContribution(true, needed);
             }
             else
             {
-                // Enemy matches player
-                enemyContributedThisRound = playerContributedThisRound;
+                int needed = playerContributedThisPhase - enemyContributedThisPhase;
+                if (needed > 0) ApplyContribution(false, needed);
             }
 
-            UpdatePot();
             CheckNegativeChips();
-            onGameStateChanged?.Invoke();
+            TryMoveToNextPhase();
         }
 
         private void Fold(bool isPlayer)
         {
-            // If player folds, enemy wins. If enemy folds, player wins.
             if (isPlayer) EnemyWin();
             else PlayerWin();
         }
 
-        private void UpdatePot()
+        private void MarkAsActed(bool isPlayer)
         {
-            currentPot = playerContributedThisRound + enemyContributedThisRound;
+            if (isPlayer) playerActedThisPhase = true;
+            else enemyActedThisPhase = true;
+        }
+
+        private void TryMoveToNextPhase()
+        {
+            bool contributionsEqual = playerContributedThisPhase == enemyContributedThisPhase;
+            bool bothActed = playerActedThisPhase && enemyActedThisPhase;
+
+            if (contributionsEqual && bothActed)
+            {
+                MoveToNextPhase();
+            }
+            else
+            {
+                onGameStateChanged?.Invoke();
+            }
+        }
+
+        private void ApplyContribution(bool isPlayer, int amount)
+        {
+            if (isPlayer)
+            {
+                playerChips -= amount;
+                playerContributedThisPhase += amount;
+            }
+            else
+            {
+                enemyContributedThisPhase += amount;
+            }
+            totalPot += amount;
+        }
+
+        private void ResetPhaseState()
+        {
+            playerContributedThisPhase = 0;
+            enemyContributedThisPhase = 0;
+            playerActedThisPhase = false;
+            enemyActedThisPhase = false;
+        }
+
+        private void MoveToNextPhase()
+        {
+            if (currentPhase == BetPhase.Showdown) return;
+
+            currentPhase++;
+            ResetPhaseState();
+            
+            Debug.Log($"Transitioning to {currentPhase}. Stake remains {currentGlobalStake}");
+            onPhaseChanged?.Invoke(currentPhase);
+            onGameStateChanged?.Invoke();
         }
 
         public void PlayerWin()
         {
-            playerChips += currentPot;
+            playerChips += totalPot;
             EndSettlement();
         }
 
         public void EnemyWin()
         {
-            // Pot lost
             EndSettlement();
         }
 
         private void EndSettlement()
         {
-            currentPot = 0;
             if (playerChips < 0)
             {
-                Debug.Log("Game Over: Player chips remain negative after settlement.");
                 onGameOver?.Invoke();
             }
             else
             {
+                Debug.Log("Round Ended. Restarting...");
                 StartRound();
             }
         }
 
         private void CheckNegativeChips()
         {
-            if (playerChips < 0)
-            {
-                Debug.Log("Warning: Player chips are negative. Revealing all cards.");
-                onChipsNegative?.Invoke();
-            }
+            if (playerChips < 0) onChipsNegative?.Invoke();
         }
     }
 }

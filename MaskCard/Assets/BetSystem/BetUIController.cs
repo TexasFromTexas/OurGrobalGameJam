@@ -11,8 +11,8 @@ namespace BetSystem
         [Header("UI Elements")]
         public TextMeshProUGUI chipsText;
         public TextMeshProUGUI potText;
-        public TextMeshProUGUI playerStatusText;
-        public TextMeshProUGUI enemyStatusText;
+        public TextMeshProUGUI phaseText;
+        public TextMeshProUGUI statusText;
 
         [Header("Player Buttons")]
         public Button playerRaiseBtn;
@@ -52,13 +52,19 @@ namespace BetSystem
 
         public void UpdateUI()
         {
-            if (chipsText) chipsText.text = $"Player: {betManager.playerChips} bb";
-            if (potText) potText.text = $"Pot: {betManager.currentPot} bb";
+            if (chipsText) chipsText.text = $"Chips: {betManager.playerChips} bb";
+            if (potText) potText.text = $"Pot: {betManager.totalPot} bb";
+            if (phaseText) phaseText.text = $"Phase: {betManager.currentPhase}";
             
-            if (playerStatusText) playerStatusText.text = $"P Contrib: {betManager.playerContributedThisRound}";
-            if (enemyStatusText) enemyStatusText.text = $"E Contrib: {betManager.enemyContributedThisRound}";
+            if (statusText) 
+            {
+                // Show Acted status for debug
+                string pStatus = betManager.playerActedThisPhase ? "[Act]" : "[Wait]";
+                string eStatus = betManager.enemyActedThisPhase ? "[Act]" : "[Wait]";
 
-            // Optional: Toggle interactability based on turn (not requested yet, but good practice)
+                statusText.text = $"Stake Level: {betManager.currentGlobalStake}\n" +
+                                  $"P: {betManager.playerContributedThisPhase} {pStatus} | E: {betManager.enemyContributedThisPhase} {eStatus}";
+            }
         }
     }
 }
