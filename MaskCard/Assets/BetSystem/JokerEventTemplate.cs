@@ -244,8 +244,8 @@ namespace BetSystem
             rectB.SetParent(parentA);
             
             // 归零位置防止飞出屏幕（Rearrange前）
-            // rectA.anchoredPosition = Vector2.zero;
-            // rectB.anchoredPosition = Vector2.zero;
+            rectA.anchoredPosition = Vector2.zero;
+            rectB.anchoredPosition = Vector2.zero;
         }
 
         private void UpdateCardText(GameObject cardObj, string text)

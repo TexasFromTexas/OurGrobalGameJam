@@ -495,6 +495,8 @@ public class CardDeckSystem : MonoBehaviour
                 cardRect.localScale = Vector3.one;
 
                 slotRect = slotObj.GetComponent<RectTransform>();
+                // 让Slot尺寸匹配卡牌尺寸（可选，但有助于调试）
+                slotRect.sizeDelta = cardRect.sizeDelta;
             }
             else if (currentParent.GetComponent<HandSlotAutoDestroy>() != null)
             {
@@ -539,6 +541,11 @@ public class CardDeckSystem : MonoBehaviour
             {
                 // 卡牌相对于Slot的“原点”应该是0,0
                 selectEffect.UpdateOriginalPosition(Vector2.zero);
+            }
+            else
+            {
+                // 如果没有交互脚本，直接归零
+                cardRect.anchoredPosition = Vector2.zero;
             }
         }
         

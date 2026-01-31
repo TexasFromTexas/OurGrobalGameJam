@@ -8,14 +8,14 @@ public class MouseAction : MonoBehaviour
     public GameObject canvas_ButArea;
 
     /// <summary>
-    /// Êó±êµã»÷ÎïÌå²¢ÍÏ¶¯£¬Ö±µ½ÔÚÕÚÕÖÄÚÊó±êÔÙ´Î´¥·¢£¬´¥·¢finalAct
+    /// é¼ æ ‡ç‚¹å‡»ç‰©ä½“å¹¶æ‹–åŠ¨ï¼Œç›´åˆ°åœ¨é®ç½©å†…é¼ æ ‡å†æ¬¡è§¦å‘ï¼Œè§¦å‘finalAct
     /// </summary>
     /// <param name="obj"></param>
     /// <param name="finalAct"></param>
     /// <returns></returns>
     public IEnumerator BeginUseMask(GameObject obj, Action finalAct)
     {
-        // ÑéÖ¤ÊäÈë²ÎÊı
+        // éªŒè¯è¾“å…¥å‚æ•°
         if (obj == null)
         {
             Debug.LogWarning("MouseAction: obj is null, cannot proceed with BeginUseSwapMask");
@@ -30,11 +30,11 @@ public class MouseAction : MonoBehaviour
 
         yield return null;
 
-        // ¸´ÖÆÒ»¸öobjµÄÎïÌå£¬²¢ÈÃËûµÄÎ»ÖÃÓëÊó±êµÄÎ»ÖÃÒ»ÖÂ£¨ZÖá²»±ä£©
+        // å¤åˆ¶ä¸€ä¸ªobjçš„ç‰©ä½“ï¼Œå¹¶è®©ä»–çš„ä½ç½®ä¸é¼ æ ‡çš„ä½ç½®ä¸€è‡´ï¼ˆZè½´ä¸å˜ï¼‰
         Vector3 mousePosition = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, obj.transform.position.z));
         GameObject clonedObj = Instantiate(obj, mousePosition, obj.transform.rotation);
 
-        // ÉèÖÃ¿ËÂ¡¶ÔÏóµÄ¸¸¶ÔÏóÎªµ±Ç°½Å±¾ËùÔÚµÄÓÎÏ·¶ÔÏó£¬±ãÓÚÍ³Ò»¹ÜÀí
+        // è®¾ç½®å…‹éš†å¯¹è±¡çš„çˆ¶å¯¹è±¡ä¸ºå½“å‰è„šæœ¬æ‰€åœ¨çš„æ¸¸æˆå¯¹è±¡ï¼Œä¾¿äºç»Ÿä¸€ç®¡ç†
         clonedObj.transform.SetParent(obj.transform);
         clonedObj.transform.localScale = Vector3.one;
 
@@ -43,11 +43,11 @@ public class MouseAction : MonoBehaviour
 
         float screenHeightPercentage = Input.mousePosition.y / Screen.height;
 
-        GameObject instantiatedCanvas = Instantiate(canvas_ButArea); //ÏÔÊ¾´¥·¢ÇøÓò
+        GameObject instantiatedCanvas = Instantiate(canvas_ButArea); //æ˜¾ç¤ºè§¦å‘åŒºåŸŸ
 
         while (!isAtAreaAndClic)
         {
-            //Í¬²½Ãæ¾ßÎ»ÖÃ
+            //åŒæ­¥é¢å…·ä½ç½®
             mousePosition = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, obj.transform.position.z));
             clonedObj.transform.position = mousePosition;
 
@@ -55,12 +55,27 @@ public class MouseAction : MonoBehaviour
             screenHeightPercentage = Input.mousePosition.y / Screen.height;
 
 
-            if (screenHeightPercentage <= 0.3f && Input.GetMouseButtonDown(0))
+            float screenWidthPercentage = Input.mousePosition.x / Screen.width;
+            
+            // æ£€æµ‹é¼ æ ‡æ¾å¼€
+            if (Input.GetMouseButtonUp(0))
             {
-                // Ö´ĞĞ×îÖÕ¶¯×÷
-                finalAct?.Invoke();
+                // æˆåŠŸè§¦å‘æ¡ä»¶ï¼šåº•éƒ¨ä¸­å¤®åŒºåŸŸ
+                // Y <= 0.15 (åº•éƒ¨15%)
+                // 0.4 <= X <= 0.6 (ä¸­é—´20%å®½åº¦ï¼Œéå¸¸çª„)
+                if (screenHeightPercentage <= 0.2f)
+                {
+                    // æ‰§è¡Œæœ€ç»ˆåŠ¨ä½œ
+                    finalAct?.Invoke();
+                    Debug.Log("Mask usage triggered.");
+                }
+                else
+                {
+                    // åŒºåŸŸå¤–æ¾å¼€ï¼šå–æ¶ˆä½¿ç”¨
+                    Debug.Log("Mask usage cancelled (released outside trigger area).");
+                }
 
-                // ÇåÀíÊµÀı»¯µÄ¶ÔÏó
+                // æ¸…ç†å®ä¾‹åŒ–çš„å¯¹è±¡ (æ— è®ºæˆåŠŸè¿˜æ˜¯å–æ¶ˆéƒ½æ¸…ç†)
                 if (clonedObj != null)
                 {
                     Destroy(clonedObj);

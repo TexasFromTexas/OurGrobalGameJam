@@ -57,6 +57,28 @@ public class SwapCardHandPublic : MonoBehaviour
     private void Update()
     {
         UpdateSwapButtonInteractable();
+
+        // ========== GLOBAL RAYCAST DEBUGGER ==========
+        if (Input.GetMouseButtonDown(0))
+        {
+            UnityEngine.EventSystems.PointerEventData pointerData = new UnityEngine.EventSystems.PointerEventData(UnityEngine.EventSystems.EventSystem.current);
+            pointerData.position = Input.mousePosition;
+            List<UnityEngine.EventSystems.RaycastResult> results = new List<UnityEngine.EventSystems.RaycastResult>();
+            UnityEngine.EventSystems.EventSystem.current.RaycastAll(pointerData, results);
+            
+            if (results.Count > 0)
+            {
+                Debug.Log($"[ClickDebug] 鼠标点击位置击中了 {results.Count} 个UI物体:");
+                foreach (var result in results)
+                {
+                    Debug.Log($" - {result.gameObject.name} (Layer: {LayerMask.LayerToName(result.gameObject.layer)}, Depth: {result.depth}, SortOrder: {result.sortingOrder})");
+                }
+            }
+            else
+            {
+                Debug.Log("[ClickDebug] 鼠标点击位置没有击中任何UI物体！");
+            }
+        }
     }
 
 
@@ -103,11 +125,13 @@ public class SwapCardHandPublic : MonoBehaviour
 
     private void UpdateSwapButtonText()
     {
+        /*
         Text btnText = swapTriggerBtn.GetComponentInChildren<Text>();
         if (btnText != null)
         {
             btnText.text = _isSwapMode ? "取消交换" : "展现神秘的样子";
         }
+        */
     }
 
     private void ToggleSwapMode()
@@ -155,7 +179,11 @@ public class SwapCardHandPublic : MonoBehaviour
                 btn.onClick.RemoveAllListeners();
                 if (isClickable)
                 {
-                    btn.onClick.AddListener(() => SelectHandCard(handCard));
+                    btn.onClick.AddListener(() => 
+                    {
+                        Debug.Log($"[SwapDebug] 点击了手牌: {handCard.name} (Parent: {handCard.transform.parent.name})");
+                        SelectHandCard(handCard);
+                    });
                 }
                 btn.interactable = isClickable;
             }
@@ -178,7 +206,11 @@ public class SwapCardHandPublic : MonoBehaviour
                 btn.onClick.RemoveAllListeners();
                 if (isClickable)
                 {
-                    btn.onClick.AddListener(() => SelectPublicCard(publicCard));
+                    btn.onClick.AddListener(() => 
+                    {
+                        Debug.Log($"[SwapDebug] 点击了公牌: {publicCard.name} (Parent: {publicCard.transform.parent.name})");
+                        SelectPublicCard(publicCard);
+                    });
                 }
                 btn.interactable = isClickable;
             }

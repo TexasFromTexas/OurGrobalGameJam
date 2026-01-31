@@ -64,6 +64,7 @@ public class AddPublicCardButton : MonoBehaviour
 
         addPublicCardBtn.interactable = canClick;
 
+        /*
         Text btnText = addPublicCardBtn.GetComponentInChildren<Text>();
         if (btnText != null)
         {
@@ -76,6 +77,7 @@ public class AddPublicCardButton : MonoBehaviour
         {
             Debug.LogWarning("多抽公牌按钮缺少Text子组件！");
         }
+        */
     }
 
     private void OnClickAddPublicCard()
