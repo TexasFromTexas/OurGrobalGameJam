@@ -87,10 +87,11 @@ namespace BetSystem
                 string pStatus = betManager.playerActedThisPhase ? "[Act]" : "[Wait]";
                 string eStatus = betManager.enemyActedThisPhase ? "[Act]" : "[Wait]";
                 string allInStatus = betManager.isAllIn ? " [ALL-IN]" : "";
+                string turnStatus = $"[State: {betManager.turnState}]";
 
                 statusText.text = $"Stake Level: {betManager.currentGlobalStake}\n" +
-                                  $"P: {betManager.playerContributedThisPhase} {pStatus} | E: {betManager.enemyContributedThisPhase} {eStatus}" +
-                                  $"{allInStatus}";
+                                  $"P: {betManager.playerContributedThisPhase} {pStatus} | E: {betManager.enemyContributedThisPhase} {eStatus}\n" +
+                                  $"{turnStatus} {allInStatus}";
             }
         }
     }

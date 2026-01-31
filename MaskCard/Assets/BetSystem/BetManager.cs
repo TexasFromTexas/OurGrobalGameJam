@@ -16,6 +16,17 @@ namespace BetSystem
         Showdown
     }
 
+    public enum TurnState
+    {
+        None,
+        PlayerTurn,
+        EnemyTurn,
+        Settlement,
+        Dealing // NEW
+    }
+    
+
+
     public class BetManager : MonoBehaviour
     {
         [Header("Settings")]
@@ -44,7 +55,10 @@ namespace BetSystem
 
         // NEW: Locking mechanism for Joker interception
         public bool isSettlementLocked = false; 
-        public bool isAllIn = false; // New All-In State
+        public bool isAllIn = false; 
+
+        [Header("Round Logic")]
+        public TurnState turnState = TurnState.None;
 
         [Header("Events")]
         public UnityEvent onChipsNegative; 
@@ -53,9 +67,8 @@ namespace BetSystem
         public UnityEvent<BetPhase> onPhaseChanged;
         public UnityEvent onNewRoundStarted;
         
-        // NEW: Fold event to allow external checks before settlement
-        public UnityEvent<bool> onFold; // param: isPlayerFolded
-        public UnityEvent onAllIn; // Trigger when All-In happens
+        public UnityEvent<bool> onFold; 
+        public UnityEvent onAllIn; 
 
         private IEnumerator Start()
         {
@@ -64,36 +77,67 @@ namespace BetSystem
             StartRound();
         }
 
-        // NEW: Turn Tracking
-        public bool isPlayerTurn = false; // Default to false (Enemy starts)
-
         public void StartRound()
         {
             isSettlementLocked = false; 
-            isAllIn = false; // Reset All-In
+            isAllIn = false; 
             currentPhase = BetPhase.Preflop;
             totalPot = 0;
             currentGlobalStake = initialBet;
             
-            // Turn Logic: Match starts with Player Blind, Enemy Blind.
-            // But User wants "Enemy First".
-            // So on Round Start, isPlayerTurn = false.
-            isPlayerTurn = false;
-            
+            // STRICT STATE: Dealing first (Preflop dealing)
+            turnState = TurnState.Dealing;
+            Debug.Log($"[BetManager] Round Start. State: {turnState}");
+
             ResetPhaseState();
             
-            // Initial forced bets (Blinds)
+            // Initial forced bets
             if (playerChips >= initialBet) ApplyContribution(true, initialBet);
             ApplyContribution(false, initialBet); 
 
             playerActedThisPhase = false;
             enemyActedThisPhase = false;
-
+            
             CheckNegativeChips();
             onGameStateChanged?.Invoke();
             onPhaseChanged?.Invoke(currentPhase);
             onNewRoundStarted?.Invoke(); 
         }
+        public void StartBettingPhase()
+        {
+            if (currentPhase == BetPhase.Showdown) return;
+
+            turnState = TurnState.EnemyTurn;
+            Debug.Log($"[BetManager] Betting Started ({currentPhase}). State: {turnState}");
+            
+            // Trigger UI update if needed, or rely on GameStateChanged from callers?
+            onGameStateChanged?.Invoke();
+        }
+
+        private void MoveToNextPhase()
+        {
+            if (currentPhase == BetPhase.Showdown) return;
+
+            // NEW: If All-In, we skip betting rounds and go straight to Showdown?
+            if (isAllIn)
+            {
+                currentPhase = BetPhase.Showdown;
+            }
+            else
+            {
+                currentPhase++;
+            }
+
+            ResetPhaseState();
+            
+            // New Phase -> Dealing State first
+            turnState = TurnState.Dealing;
+            Debug.Log($"[BetManager] Phase Changed to {currentPhase}. State: {turnState} (Waiting for Reveal)");
+            
+            onPhaseChanged?.Invoke(currentPhase);
+            onGameStateChanged?.Invoke();
+        }
+
 
         #region Generic Ability API
         /// <summary>
@@ -125,7 +169,7 @@ namespace BetSystem
         // Helper for UI
         public bool CanRaise()
         {
-            if (!isPlayerTurn) return false; // Not your turn
+            if (turnState != TurnState.PlayerTurn) return false; 
             if (isAllIn) return false;
             int cost = (currentGlobalStake * 2) - playerContributedThisPhase;
             return playerChips >= cost; 
@@ -133,7 +177,7 @@ namespace BetSystem
 
         public bool CanCall()
         {
-            if (!isPlayerTurn) return false; // Not your turn
+            if (turnState != TurnState.PlayerTurn) return false;
             if (isAllIn) return false;
             return playerChips > 0;
         }
@@ -141,12 +185,12 @@ namespace BetSystem
         private void Raise(bool isPlayer)
         {
             MarkAsActed(isPlayer);
-            
-            // Calculate proposed new stake
             int newStake = currentGlobalStake * 2;
             
             if (isPlayer)
             {
+                if (turnState != TurnState.PlayerTurn) return; // Generic guard
+
                 int needed = newStake - playerContributedThisPhase;
                 if (needed > playerChips)
                 {
@@ -158,10 +202,13 @@ namespace BetSystem
                 if (playerChips == 0) TriggerAllIn();
                 
                 // Player Raised -> Turn passes to Enemy
-                isPlayerTurn = false;
+                turnState = TurnState.EnemyTurn;
+                Debug.Log($"[BetManager] Player Raised. State: {turnState}");
             }
             else // Enemy Raise
             {
+                if (turnState != TurnState.EnemyTurn) return; // Generic guard
+
                 int maxStake = playerChips + playerContributedThisPhase;
                 if (newStake > maxStake) newStake = maxStake;
 
@@ -170,7 +217,8 @@ namespace BetSystem
                 currentGlobalStake = newStake;
                 
                 // Enemy Raised -> Turn passes to Player
-                isPlayerTurn = true;
+                turnState = TurnState.PlayerTurn;
+                Debug.Log($"[BetManager] Enemy Raised. State: {turnState}");
             }
             
             if (isPlayer) currentGlobalStake = newStake;
@@ -185,30 +233,31 @@ namespace BetSystem
 
             if (isPlayer)
             {
+                if (turnState != TurnState.PlayerTurn) return;
+
                 int needed = enemyContributedThisPhase - playerContributedThisPhase;
-                
-                // Smart All-In Logic
-                if (needed > playerChips)
-                {
-                    needed = playerChips; 
-                    TriggerAllIn();
-                }
-                
+                // Debug Log for diagnostics
+                Debug.Log($"[BetManager] Player Call. Chips: {playerChips}, Needed: {needed}, EnemyContrib: {enemyContributedThisPhase}, PlayerContrib: {playerContributedThisPhase}");
+
+                if (needed > playerChips) { needed = playerChips; TriggerAllIn(); }
                 if (needed > 0) ApplyContribution(true, needed);
                 if (playerChips == 0) TriggerAllIn();
                 
-                // Player Called -> If Phase ENDS, turn resetting is handled in MoveToNextPhase.
-                // If Phase continues (e.g. check-check?), usually means end.
-                // But generally, Player action ends turn.
-                isPlayerTurn = false; // Pass back to Enemy (or Phase Change will reset)
+                // Player Called -> Logic to check phase end
+                // If phase doesn't end, theoretically pass to Enemy logic (though usually phase ends)
+                turnState = TurnState.EnemyTurn; 
+                Debug.Log($"[BetManager] Player Called. State: {turnState}");
             }
             else
             {
+                if (turnState != TurnState.EnemyTurn) return;
+
                 int needed = playerContributedThisPhase - enemyContributedThisPhase;
                 if (needed > 0) ApplyContribution(false, needed);
                 
                 // Enemy Called -> Turn passes to Player
-                isPlayerTurn = true;
+                turnState = TurnState.PlayerTurn;
+                Debug.Log($"[BetManager] Enemy Called. State: {turnState}");
             }
 
             CheckNegativeChips();
@@ -220,7 +269,7 @@ namespace BetSystem
             if (!isAllIn)
             {
                 isAllIn = true;
-                Debug.Log("ALL IN Triggered!");
+                Debug.Log($"[BetManager] ALL IN Triggered! PlayerChips: {playerChips}, StackTrace: {System.Environment.StackTrace}");
                 onAllIn?.Invoke();
             }
         }
@@ -290,39 +339,7 @@ namespace BetSystem
             MoveToNextPhase();
         }
 
-        private void MoveToNextPhase()
-        {
-            if (currentPhase == BetPhase.Showdown) return;
 
-            // NEW: If All-In, we skip betting rounds and go straight to Showdown?
-            // "Forced skip to open cards" -> Showdown.
-            // But we might want to reveal Flop/Turn/River visually step by step? 
-            // The simple interpretation is: Force Phase = Showdown.
-            // BUT usually you want to see the cards dealt.
-            // Let's just advance phase. If All-In, logic elsewhere (like Bridge) might auto-open cards?
-            // Or here, we just fast forward?
-            // Let's try: If All-In, we still advance phase by phase, but AUTOPLAY (no betting allowed).
-            // But User said "Forced skip to open cards". 
-            // Let's jump to Showdown if All-In to be compliant with request.
-            
-            if (isAllIn)
-            {
-                currentPhase = BetPhase.Showdown;
-            }
-            else
-            {
-                currentPhase++;
-            }
-
-            ResetPhaseState();
-            
-            // New Phase -> Enemy Starts
-            isPlayerTurn = false;
-            
-            Debug.Log($"Transitioning to {currentPhase}. Stake remains {currentGlobalStake}");
-            onPhaseChanged?.Invoke(currentPhase);
-            onGameStateChanged?.Invoke();
-        }
 
         public void PlayerWin()
         {

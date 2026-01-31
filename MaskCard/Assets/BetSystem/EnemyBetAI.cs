@@ -89,45 +89,63 @@ namespace BetSystem
         private void CheckTurn()
         {
             if (betManager == null || isThinking) return;
-            if (cardDeckSystem == null || !cardDeckSystem.IsInRound) return; // Guard: Must have cards
+            if (cardDeckSystem == null || !cardDeckSystem.IsInRound) return; 
 
-            // 1. Basic Turn Check
-            // REMOVED: Player First Requirement
-            // if (!betManager.playerActedThisPhase) return;
+            // STRICT STATE CHECK
+            if (betManager.turnState == TurnState.Dealing)
+            {
+                 // Strictly waiting for cards
+                 return;
+            }
+
+            if (betManager.turnState != TurnState.EnemyTurn)
+            {
+               // Debug.Log($"[EnemyAI] Not my turn. State: {betManager.turnState}");
+               return; 
+            }
 
             // 2. Settlement / End Check
             if (betManager.currentPhase == BetPhase.Showdown) return;
             if (betManager.isSettlementLocked) return;
 
             // 3. Do we need to act?
-            // If we have NOT acted, OR if Player Raised (contributed more) and we need to match
-            bool needToAct = !betManager.enemyActedThisPhase 
-                             || (betManager.enemyContributedThisPhase < betManager.playerContributedThisPhase);
-
-            if (needToAct)
-            {
-                StartCoroutine(ThinkAndAct());
-            }
+            // "Enemy Turn" implies we need to act.
+            // But we keep the double check logic just in case logic calls CheckTurn spuriously.
+            // Actually, if it IS EnemyTurn, we MUST act.
+            StartCoroutine(ThinkAndAct());
         }
 
         private IEnumerator ThinkAndAct()
         {
             isThinking = true;
+            Debug.Log("[EnemyAI] Thinking started...");
 
             // Simulate processing time
             float delay = Random.Range(minThinkingTime, maxThinkingTime);
             yield return new WaitForSeconds(delay);
 
-            // Double check state after delay (in case player folded or game ended)
-            if (betManager.currentPhase == BetPhase.Showdown || betManager.isSettlementLocked)
+            try
+            {
+                // Double check state after delay (in case player folded or game ended)
+                if (betManager.currentPhase == BetPhase.Showdown || betManager.isSettlementLocked)
+                {
+                    Debug.Log("[EnemyAI] Stop thinking: Phase ended or Locked.");
+                    yield break;
+                }
+
+                MakeDecision();
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[EnemyAI] Error during decision: {e.Message}\n{e.StackTrace}");
+                // Fallback: Call to keep game moving?
+                if (betManager != null) betManager.EnemyCall();
+            }
+            finally
             {
                 isThinking = false;
-                yield break;
+                Debug.Log("[EnemyAI] Thinking finished. isThinking = false");
             }
-
-            MakeDecision();
-
-            isThinking = false;
         }
 
         private void MakeDecision()
