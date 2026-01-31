@@ -444,7 +444,7 @@ public class Judge
     }
 
     /// <summary>
-    /// 改进版的牌型判断，即使不足5张牌也能判断潜在牌型
+    /// AI逻辑判断，有可能不足5张牌也能判断潜在牌型
     /// </summary>
     private PokerHandType GetHandTypeAdvanced(List<PlayingCard> cards)
     {
