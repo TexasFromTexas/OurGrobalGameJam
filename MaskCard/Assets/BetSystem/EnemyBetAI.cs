@@ -26,35 +26,72 @@ namespace BetSystem
             {
                 betManager.onGameStateChanged.AddListener(CheckTurn);
                 betManager.onNewRoundStarted.AddListener(OnNewRound);
+                betManager.onPhaseChanged.AddListener(OnPhaseChanged);
+            }
+
+            if (cardDeckSystem != null)
+            {
+                // Wait for Cards to be dealt before acting
+                cardDeckSystem.OnRoundStateChanged += OnCardRoundStateChanged;
             }
 
             // Initial check
+           // CheckTurn(); // Don't check on Start, wait for Round/Cards.
+        }
+
+        private void OnDestroy()
+        {
+             if (cardDeckSystem != null)
+             {
+                 cardDeckSystem.OnRoundStateChanged -= OnCardRoundStateChanged;
+             }
+        }
+
+        private void OnCardRoundStateChanged(bool isInRound)
+        {
+            if (isInRound)
+            {
+                // Cards Dealt, Game On -> Check if we need to act
+                CheckTurn();
+            }
+            else
+            {
+                StopAllCoroutines();
+                isThinking = false;
+            }
+        }
+
+        private bool hasRaisedThisPhase = false;
+
+        private void OnPhaseChanged(BetPhase phase)
+        {
+            hasRaisedThisPhase = false;
             CheckTurn();
         }
 
         private void OnNewRound()
         {
             isThinking = false;
+            hasRaisedThisPhase = false;
             StopAllCoroutines();
         }
 
         private void CheckTurn()
         {
             if (betManager == null || isThinking) return;
+            if (cardDeckSystem == null || !cardDeckSystem.IsInRound) return; // Guard: Must have cards
 
             // 1. Basic Turn Check
-            // We only act if the Player has already acted in this phase.
-            // (Assumes Player goes first logic)
-            if (!betManager.playerActedThisPhase) return;
+            // REMOVED: Player First Requirement
+            // if (!betManager.playerActedThisPhase) return;
 
             // 2. Settlement / End Check
             if (betManager.currentPhase == BetPhase.Showdown) return;
             if (betManager.isSettlementLocked) return;
 
             // 3. Do we need to act?
-            // - If we haven't acted yet this phase
-            // - OR if player raised (we contributed less)
-            bool needToAct = !betManager.enemyActedThisPhase
+            // If we have NOT acted, OR if Player Raised (contributed more) and we need to match
+            bool needToAct = !betManager.enemyActedThisPhase 
                              || (betManager.enemyContributedThisPhase < betManager.playerContributedThisPhase);
 
             if (needToAct)
@@ -94,7 +131,6 @@ namespace BetSystem
 
             // Gather Cards
             List<PlayingCard> enemyHand = GetCardsFromTransform(cardDeckSystem.enemyHandArea);
-            //  List<PlayingCard> publicCards = GetCardsFromObjects(cardDeckSystem.PublicCardObjects);
             List<GameObject> PublicCardFlip = new List<GameObject>();
             foreach (var item in cardDeckSystem.PublicCardObjects)
             {
@@ -104,11 +140,9 @@ namespace BetSystem
                 }
             }
 
-
             List<PlayingCard> publicCards = GetCardsFromObjects(PublicCardFlip);
             List<PlayingCard> fullHand = new List<PlayingCard>(enemyHand);
             fullHand.AddRange(publicCards);
-            // fullHand.AddRange(publicCards);
 
             // Judge AI Logic
             float raiseRate, callRate, foldRate;
@@ -120,7 +154,17 @@ namespace BetSystem
             switch (behavior)
             {
                 case behaviorType.raise:
-                    betManager.EnemyRaise();
+                    // Smart Logic: Limit to 1 raise per phase
+                    if (hasRaisedThisPhase)
+                    {
+                        Debug.Log("Enemy desired Raise but already raised this phase. Falling back to Call.");
+                        betManager.EnemyCall();
+                    }
+                    else
+                    {
+                        hasRaisedThisPhase = true;
+                        betManager.EnemyRaise();
+                    }
                     break;
                 case behaviorType.fold:
                     betManager.EnemyFold();

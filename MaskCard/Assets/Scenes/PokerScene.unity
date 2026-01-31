@@ -156,8 +156,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -619, y: 137}
-  m_SizeDelta: {x: 200, y: 50}
+  m_AnchoredPosition: {x: -619, y: 273}
+  m_SizeDelta: {x: 200, y: 25}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &48300028
 MonoBehaviour:
@@ -206,7 +206,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 44.75
+  m_fontSize: 22.35
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -804,7 +804,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -276, y: -322}
+  m_AnchoredPosition: {x: -526, y: -460}
   m_SizeDelta: {x: 90, y: 90}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &131256959
@@ -2811,6 +2811,7 @@ GameObject:
   - component: {fileID: 1230495073}
   - component: {fileID: 1230495076}
   - component: {fileID: 1230495077}
+  - component: {fileID: 1230495078}
   m_Layer: 0
   m_Name: BetSystem
   m_TagString: Untagged
@@ -2855,7 +2856,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 510f1d88ad700ae4e851c10dc37ae356, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  initialPlayerChips: 20
+  initialPlayerChips: 2000
   initialBet: 1
   costDeleteCard: 5
   costSwapCard: 1
@@ -2871,6 +2872,7 @@ MonoBehaviour:
   playerActedThisPhase: 0
   enemyActedThisPhase: 0
   isSettlementLocked: 0
+  isAllIn: 0
   onChipsNegative:
     m_PersistentCalls:
       m_Calls: []
@@ -2889,6 +2891,10 @@ MonoBehaviour:
   onFold:
     m_PersistentCalls:
       m_Calls: []
+  onAllIn:
+    m_PersistentCalls:
+      m_Calls: []
+  isPlayerTurn: 0
 --- !u!4 &1230495075
 Transform:
   m_ObjectHideFlags: 0
@@ -2919,7 +2925,10 @@ MonoBehaviour:
   betManager: {fileID: 1230495074}
   cardDeckSystem: {fileID: 752966010}
   stopShowdownIfJokerFound: 1
-  onJokerDetected:
+  onPublicJokerRevealed:
+    m_PersistentCalls:
+      m_Calls: []
+  onHandJokerRevealed:
     m_PersistentCalls:
       m_Calls: []
 --- !u!114 &1230495077
@@ -2934,10 +2943,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 824bceb023e354947aa3a15760d8ecc6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  betManager: {fileID: 0}
-  cardDeckSystem: {fileID: 0}
+  betManager: {fileID: 1230495074}
+  cardDeckSystem: {fileID: 752966010}
   minThinkingTime: 0.3
   maxThinkingTime: 0.6
+--- !u!114 &1230495078
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1230495072}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b44e3966277fff4c93466c2f762f0fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  bridge: {fileID: 0}
+  betManager: {fileID: 0}
+  cardDeckSystem: {fileID: 0}
 --- !u!1 &1294219520
 GameObject:
   m_ObjectHideFlags: 0
@@ -3254,8 +3278,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -619, y: -12}
-  m_SizeDelta: {x: 200, y: 50}
+  m_AnchoredPosition: {x: -619, y: 191}
+  m_SizeDelta: {x: 200, y: 25}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1406899489
 CanvasRenderer:
@@ -3312,7 +3336,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 44.75
+  m_fontSize: 22.35
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -3834,8 +3858,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -619, y: 288}
-  m_SizeDelta: {x: 200, y: 50}
+  m_AnchoredPosition: {x: -619, y: 359}
+  m_SizeDelta: {x: 200, y: 25}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1624038000
 MonoBehaviour:
@@ -3884,7 +3908,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 44.75
+  m_fontSize: 22.35
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -4626,7 +4650,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -619, y: 454}
-  m_SizeDelta: {x: 200, y: 50}
+  m_SizeDelta: {x: 200, y: 25}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1965792797
 MonoBehaviour:
@@ -4675,7 +4699,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 44.75
+  m_fontSize: 22.35
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1

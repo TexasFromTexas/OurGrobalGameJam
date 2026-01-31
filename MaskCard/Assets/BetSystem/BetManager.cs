@@ -61,6 +61,9 @@ namespace BetSystem
             StartRound();
         }
 
+        // NEW: Turn Tracking
+        public bool isPlayerTurn = false; // Default to false (Enemy starts)
+
         public void StartRound()
         {
             isSettlementLocked = false; 
@@ -68,11 +71,17 @@ namespace BetSystem
             currentPhase = BetPhase.Preflop;
             totalPot = 0;
             currentGlobalStake = initialBet;
+            
+            // Turn Logic: Match starts with Player Blind, Enemy Blind.
+            // But User wants "Enemy First".
+            // So on Round Start, isPlayerTurn = false.
+            isPlayerTurn = false;
+            
             ResetPhaseState();
             
-            // Initial forced bets (Blinds) - make sure we have chips
+            // Initial forced bets (Blinds)
             if (playerChips >= initialBet) ApplyContribution(true, initialBet);
-            ApplyContribution(false, initialBet); // Enemy has infinite? Or tracking? Assuming infinite/separate.
+            ApplyContribution(false, initialBet); 
 
             playerActedThisPhase = false;
             enemyActedThisPhase = false;
@@ -110,22 +119,19 @@ namespace BetSystem
         public void EnemyFold() => Fold(false);
         #endregion
 
-        // Helper for UI to check if actions are valid/affordable
+        // Helper for UI
         public bool CanRaise()
         {
+            if (!isPlayerTurn) return false; // Not your turn
             if (isAllIn) return false;
-            // Simple check: do we have ANY chips to raise? 
-            // Real logic: currentStake * 2 - contributed.
             int cost = (currentGlobalStake * 2) - playerContributedThisPhase;
             return playerChips >= cost; 
         }
 
         public bool CanCall()
         {
+            if (!isPlayerTurn) return false; // Not your turn
             if (isAllIn) return false;
-            // Need valid positive chips, or at least 1 chip? 
-            // Actually, you can ALWAYS call if you have > 0 chips (All-In Call).
-            // But if chips are negative, disable?
             return playerChips > 0;
         }
 
@@ -141,45 +147,29 @@ namespace BetSystem
                 int needed = newStake - playerContributedThisPhase;
                 if (needed > playerChips)
                 {
-                    // Player trying to raise but can't afford full raise?
-                    // Usually UI should block this via CanRaise().
-                    // But if triggered, let's treat as All-In Raise (limit stake to what player has)?
-                    // User asked: "disable button if negative". 
-                    // So we shouldn't enter here if CanRaise is false.
                     Debug.LogWarning("Player Raise blocked: Insufficient chips.");
                     return;
                 }
                 
                 ApplyContribution(true, needed);
                 if (playerChips == 0) TriggerAllIn();
+                
+                // Player Raised -> Turn passes to Enemy
+                isPlayerTurn = false;
             }
             else // Enemy Raise
             {
-                // Smart Enemy Logic: Adjust Raise to not force player negative IMMEDIATELY (allow All-In call)
-                // If Enemy raises to X, Player needs (X - playerContributed).
-                // If (X - playerContributed) > playerChips, Player would go negative if forced to match X.
-                // Standard Poker: Enemy raises to X. Player calls All-In (betting playerChips). Side pot created.
-                // Simplified here: Enemy limits raise so Player CAN match it exactly? 
-                // User said: "adjust raise amount to just enough for all-in call".
-                // This implies Enemy shouldn't raise BEYOND player's stack + contribution.
-                
-                // Max Stake allowed = PlayerTotalChips + PlayerContributedSoFar
                 int maxStake = playerChips + playerContributedThisPhase;
-                
-                if (newStake > maxStake)
-                {
-                    Debug.Log($"Enemy Raise Adjusted from {newStake} to {maxStake} (Player Cap)");
-                    newStake = maxStake;
-                }
+                if (newStake > maxStake) newStake = maxStake;
 
                 int needed = newStake - enemyContributedThisPhase;
                 ApplyContribution(false, needed);
-                
-                // Set global stake
                 currentGlobalStake = newStake;
+                
+                // Enemy Raised -> Turn passes to Player
+                isPlayerTurn = true;
             }
             
-            // Only update stake if Player raised (Enemy logic handled above)
             if (isPlayer) currentGlobalStake = newStake;
 
             CheckNegativeChips();
@@ -197,18 +187,25 @@ namespace BetSystem
                 // Smart All-In Logic
                 if (needed > playerChips)
                 {
-                    Debug.Log("Player forced to All-In on Call!");
-                    needed = playerChips; // Cap at remaining chips
+                    needed = playerChips; 
                     TriggerAllIn();
                 }
                 
                 if (needed > 0) ApplyContribution(true, needed);
                 if (playerChips == 0) TriggerAllIn();
+                
+                // Player Called -> If Phase ENDS, turn resetting is handled in MoveToNextPhase.
+                // If Phase continues (e.g. check-check?), usually means end.
+                // But generally, Player action ends turn.
+                isPlayerTurn = false; // Pass back to Enemy (or Phase Change will reset)
             }
             else
             {
                 int needed = playerContributedThisPhase - enemyContributedThisPhase;
                 if (needed > 0) ApplyContribution(false, needed);
+                
+                // Enemy Called -> Turn passes to Player
+                isPlayerTurn = true;
             }
 
             CheckNegativeChips();
@@ -284,6 +281,12 @@ namespace BetSystem
             enemyActedThisPhase = false;
         }
 
+        public void SkipPhase()
+        {
+            Debug.Log("Forcing Phase Skip (Joker Logic)");
+            MoveToNextPhase();
+        }
+
         private void MoveToNextPhase()
         {
             if (currentPhase == BetPhase.Showdown) return;
@@ -309,6 +312,9 @@ namespace BetSystem
             }
 
             ResetPhaseState();
+            
+            // New Phase -> Enemy Starts
+            isPlayerTurn = false;
             
             Debug.Log($"Transitioning to {currentPhase}. Stake remains {currentGlobalStake}");
             onPhaseChanged?.Invoke(currentPhase);

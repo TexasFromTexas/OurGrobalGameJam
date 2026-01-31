@@ -94,15 +94,37 @@ namespace BetSystem
                     RevealCommunityCards(3);
                     break;
                 case BetPhase.Turn:
+                    CheckAndSkipIfRevealedJoker(3); // Turn is index 3 (4th card)
                     RevealCommunityCards(4);
                     break;
                 case BetPhase.River:
+                    CheckAndSkipIfRevealedJoker(4); // River is index 4 (5th card)
                     RevealCommunityCards(5);
                     break;
                 case BetPhase.Showdown:
                     RevealAllCommunityCards();
                     PerformShowdown();
                     break;
+            }
+        }
+
+        private void CheckAndSkipIfRevealedJoker(int cardIndex)
+        {
+            if (cardDeckSystem == null || cardDeckSystem.PublicCardObjects == null) return;
+            if (cardIndex >= cardDeckSystem.PublicCardObjects.Count) return;
+
+            GameObject cardObj = cardDeckSystem.PublicCardObjects[cardIndex];
+            
+            // Check if this specific card is a Revealed Joker
+            if (IsJokerAndRevealed(cardObj))
+            {
+                Debug.Log($"[Skip Logic] Phase Card [{cardIndex}] is a Revealed Joker! Skipping phase...");
+                // We restart a coroutine or just call SkipPhase?
+                // Calling SkipPhase immediately here might be risky if we are inside the Event recursion?
+                // BetManager calls onPhaseChanged -> Bridge calls SkipPhase -> BetManager updates Phase -> onPhaseChanged...
+                // This is recursion, but it's finite (Turn -> River -> Showdown). 
+                // So calling SkipPhase directly is fine as long as we don't block.
+                betManager.SkipPhase();
             }
         }
 
