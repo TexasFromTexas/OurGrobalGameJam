@@ -4,8 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// 手牌↔公牌交换功能（最终修复版）
-/// 解决：公牌背面时交换数值不同步、显示和实际数值不一致问题
+/// 手牌↔公牌交换功能（最终修复版+仅回合开始后启用按钮）
 /// </summary>
 public class SwapCardHandPublic : MonoBehaviour
 {
@@ -40,9 +39,30 @@ public class SwapCardHandPublic : MonoBehaviour
         swapTriggerBtn.onClick.AddListener(ToggleSwapMode);
         SetCardClickable(false);
         UpdateSwapButtonText();
+        // ========== 新增：初始化按钮可交互状态（回合未开始则禁用） ==========
+        UpdateSwapButtonInteractable();
 
         // 初始化公牌数据源：确保所有公牌的显示缓存和cardData一致
         InitPublicCardDataSync();
+    }
+
+    // ========== 新增：每帧更新按钮可交互状态 ==========
+    private void Update()
+    {
+        UpdateSwapButtonInteractable();
+    }
+
+    /// <summary>
+    /// 核心新增：控制交换按钮仅在回合开始后启用
+    /// </summary>
+    private void UpdateSwapButtonInteractable()
+    {
+        if (swapTriggerBtn == null || cardDeckSystem == null) return;
+
+        // 按钮启用条件：1. 回合已开始 2. 有手牌 3. 有公牌（可选，根据需求调整）
+        swapTriggerBtn.interactable = cardDeckSystem.IsInRound
+                                   && cardDeckSystem.PlayerCardCount > 0
+                                   && cardDeckSystem.PublicCardObjects.Count > 0;
     }
 
     /// <summary>
@@ -61,7 +81,6 @@ public class SwapCardHandPublic : MonoBehaviour
 
             if (cd != null && cfc != null)
             {
-                // 强制绑定公牌的显示数据到cardData（核心：消除缓存）
                 cfc.bindingCardData = cd.cardData;
             }
         }
@@ -72,12 +91,19 @@ public class SwapCardHandPublic : MonoBehaviour
         Text btnText = swapTriggerBtn.GetComponentInChildren<Text>();
         if (btnText != null)
         {
-            btnText.text = _isSwapMode ? "取消交换" : "交换手牌公牌";
+            btnText.text = _isSwapMode ? "取消交换" : "展现神秘的样子";
         }
     }
 
     private void ToggleSwapMode()
     {
+        // ========== 新增：回合未开始时，禁止进入交换模式 ==========
+        if (!cardDeckSystem.IsInRound)
+        {
+            Debug.LogWarning("[SwapCard] 回合未开始，无法进入交换模式！");
+            return;
+        }
+
         _isSwapMode = !_isSwapMode;
 
         if (_isSwapMode)
@@ -212,9 +238,7 @@ public class SwapCardHandPublic : MonoBehaviour
         // 4. 关键修复：同步背面公牌的显示缓存
         if (publicCFC != null)
         {
-            // 强制将公牌的显示数据绑定到最新的cardData
             publicCFC.bindingCardData = publicCD.cardData;
-            // 如果公牌是背面状态，标记其需要刷新显示
             if (publicCFC._isShowingBack)
             {
                 publicCFC.NeedRefreshDisplay = true;
@@ -297,7 +321,6 @@ public class SwapCardHandPublic : MonoBehaviour
 }
 
 #if UNITY_EDITOR
-
 [CustomPropertyDrawer(typeof(SwapCardHandPublic.ReadOnlyAttribute))]
 public class SwapCardReadOnlyDrawer : PropertyDrawer
 {

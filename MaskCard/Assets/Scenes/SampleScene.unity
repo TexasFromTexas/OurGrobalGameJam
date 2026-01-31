@@ -878,6 +878,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardDeckSystem: {fileID: 752966010}
   addPublicCardBtn: {fileID: 1160853776}
+  peekCardScript: {fileID: 714463197}
 --- !u!114 &714463197
 MonoBehaviour:
   m_ObjectHideFlags: 0

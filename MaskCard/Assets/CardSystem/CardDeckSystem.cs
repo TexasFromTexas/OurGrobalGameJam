@@ -404,6 +404,25 @@ public class CardDeckSystem : MonoBehaviour
             cardRect.anchorMax = new Vector2(0.5f, 0.5f);
         }
     }
+    // 在CardDeckSystem脚本中新增
+    /// <summary>
+    /// 移除指定公牌
+    /// </summary>
+    /// <param name="publicCard">待移除的公牌物体</param>
+   
+    public event Action<GameObject> OnPublicCardRemoved;
+
+    // 在RemovePublicCard方法中触发事件
+    public void RemovePublicCard(GameObject publicCard)
+    {
+        if (PublicCardObjects.Contains(publicCard))
+        {
+            PublicCardObjects.Remove(publicCard);
+            // 触发删除事件
+            OnPublicCardRemoved?.Invoke(publicCard);
+            Destroy(publicCard);
+        }
+    }
 
     private void DrawCardsFromDeck(ref List<PlayingCard> targetHand, int drawCount)
     {
