@@ -4,6 +4,9 @@ using System.Collections;
 
 namespace BetSystem
 {
+    /// <summary>
+    /// ÅÆ¾Ö½×¶ÎÃ¶¾Ù
+    /// </summary>
     public enum BetPhase
     {
         Preflop,
